@@ -59,7 +59,7 @@ done
 for i in 0 1 2 3 4 5 6 7; do
    # Run a long process with each sample, like this:
    if [ ! -e ${SAMPLE[$i]}.sam ] && [ -e reference.1.bt2 ]; then
-      bowtie2 -x reference -U ${SAMPLE[$i]}.fastq -S ${SAMPLE[$i]}.sam 2> ${SAMPLE[$i]}.log &
+      -x reference -U ${SAMPLE[$i]}.fastq -S ${SAMPLE[$i]}.sam 2> ${SAMPLE[$i]}.log &
    fi
 done
 wait
