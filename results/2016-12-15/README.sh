@@ -38,8 +38,8 @@ for i in $DATA/*.fastq.gz; do #Path para que vaya a los reads
               -i 10 \
               -I 15000 \
               --max-multihits 1 \
-              -G $ANNOTATION/maker2.all.gff \
-              -o ./$name ./index/B.plicatilis $name.fastq 1> $name/log 2> $name/err
+	      -G $ANNOTATION/maker2.all.gff \
+              -o ./$name ./index/B.plicatilis $name.trim.fastq 1> $name/log 2> $name/error
 
       rm $name.fastq
    fi
