@@ -99,7 +99,7 @@ Identify differentially expressed genes and transcripts
 
 -------------------------------------------------------------------------------------------------
 
-#2017-01-27//Write failed: Broken pipe
+#2017-01-27 \\ Ara està en /remove
 
 Identify differentially expressed genes and transcripts
 
@@ -109,9 +109,12 @@ Identify differentially expressed genes and transcripts
 -------------------------------------------------------------------------------------------------
  
 #2017-01-31
-IN this directory we tried to know if the run is completed since error "Write failed: Broken file" appeared
+IN this directory we tried to know if the run is completed since error "Write failed: Broken pipe" appeared
 
 #Cufflinks: cuffdiff (-q) 
 Same script than before (2017-01-27) but adding "date" at the end of script
 
+No error or broken pipe were found
+
+Results:  
 -------------------------------------------------------------------------------------------------
