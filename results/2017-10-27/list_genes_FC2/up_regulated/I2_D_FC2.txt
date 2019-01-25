@@ -1,0 +1,4 @@
+XLOC_003881	XLOC_003881	augustus_masked-scaffold11334_len30931_cov77-processed-gene-0.9	scaffold11334_len30931_cov77:22449-22862	I1	I2	OK	1.84205	7.63659	2.05162	1.9728	0.0028	0.0288821	yes
+XLOC_013556	XLOC_013556	snap_masked-scaffold1728_len47034_cov76-processed-gene-0.22,snap_masked-scaffold1728_len47034_cov76-processed-gene-0.23	scaffold1728_len47034_cov76:129-2323	I1	I2	OK	0.470687	2.61267	2.47268	2.49225	0.00435	0.0407726	yes
+XLOC_031980	XLOC_031980	snap_masked-scaffold40811_len14186_cov88-processed-gene-0.3	scaffold40811_len14186_cov88:2662-3715	I1	I2	OK	4.43688	19.2458	2.11693	3.11082	5e-05	0.00107094	yes
+XLOC_042321	XLOC_042321	augustus_masked-scaffold653_len50200_cov76-processed-gene-0.4	scaffold653_len50200_cov76:48163-50152	I1	I2	OK	0.591829	5.32426	3.16933	4.24431	0.00325	0.0324954	yes

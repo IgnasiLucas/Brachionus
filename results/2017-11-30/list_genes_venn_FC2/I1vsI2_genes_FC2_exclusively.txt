@@ -1,0 +1,4 @@
+augustus_masked-scaffold110747_len1055_cov1462_single-processed-gene-0.0
+augustus_masked-scaffold653_len50200_cov76-processed-gene-0.4
+augustus_masked-scaffold6594_len44691_cov84-processed-gene-0.5
+

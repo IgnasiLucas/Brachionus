@@ -1,0 +1,5 @@
+augustus_masked-scaffold1064_len15764_cov73-processed-gene-0.1
+augustus_masked-scaffold111253_len4053_cov137_single-processed-gene-0.0
+augustus_masked-scaffold71092_len1380_cov83_single-processed-gene-0.0
+maker-scaffold92882_len2979_cov37_single-augustus-gene-0.6
+snap_masked-scaffold31343_len97772_cov85-processed-gene-0.73
