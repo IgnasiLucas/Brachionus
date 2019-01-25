@@ -117,4 +117,19 @@ Same script than before (2017-01-27) but adding "date" at the end of script
 No error or broken pipe were found
 
 Results:  
+
 -------------------------------------------------------------------------------------------------
+#2017-10-27
+Analyses of differential expression genes (DEGs) for each condition (regime/diapause). List of genes with differential expression (q-val<0.05) y other list (q-val<0.05 and log2FC>2).
+
+-------------------------------------------------------------------------------------------------
+#2017-11-30
+DEGs of interes exclusively and shared between comparations
+
+------------------------------------------------------------------------------------------------
+#2017-12-07
+Functionallity assignment to DEGs of interest
+1.COmparations
+2.Up_regulated in for each condition (regime/diapause)
+
+------------------------------------------------------------------------------------------------
