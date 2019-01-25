@@ -1,5 +1,0 @@
-param	value
-cmd_line	cuffdiff -p 24 -b /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta -u -L I1,P1,I2,P2 -q -o diff_out /home/eva/Brachionus/results/2017-01-24/cuffmerge/merged.gtf /home/eva/Brachionus/results/2016-12-19/1A_S8/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/2A_S7/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/4A_S6/accepted_hits.bam /home/eva/Brachionus/results/2016-12-19/3A_S9/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/5A_S2/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/6A_S3/accepted_hits.bam /home/eva/Brachionus/results/2016-12-19/1C_S1/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/2C_S5/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/4C_S12/accepted_hits.bam /home/eva/Brachionus/results/2016-12-19/3C_S11/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/5C_S4/accepted_hits.bam,/home/eva/Brachionus/results/2016-12-19/6C_S10/accepted_hits.bam 
-version	2.2.1
-SVN_revision	4237
-boost_version	104700
