@@ -1,0 +1,9 @@
+augustus_masked-scaffold7459_len5104_cov56-processed-gene-0.0
+genemark-scaffold31416_len10013_cov53-processed-gene-0.3
+maker-scaffold42310_len7519_cov59-augustus-gene-0.10
+snap_masked-scaffold13242_len53655_cov80-processed-gene-0.16
+snap_masked-scaffold14832_len27230_cov71-processed-gene-0.12
+snap_masked-scaffold27477_len23036_cov88-processed-gene-0.16
+snap_masked-scaffold38627_len1782_cov68-processed-gene-0.4,snap_masked-scaffold38627_len1782_cov68-processed-gene-0.5
+snap_masked-scaffold4283_len5606_cov49-processed-gene-0.6
+
