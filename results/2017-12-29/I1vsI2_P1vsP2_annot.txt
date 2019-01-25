@@ -1,0 +1,5 @@
+augustus_masked-scaffold1064_len15764_cov73-processed-gene-0.1	---NA---	456							Coil (COILS)
+augustus_masked-scaffold111253_len4053_cov137_single-processed-gene-0.0	fatty acid synthase	1101	20	5.2E-54	47.4%	2	F:hydrolase activity, acting on ester bonds; P:biosynthetic process		IPR029058 (G3DSA:3.40.50.GENE3D); IPR001031 (PFAM); IPR020807 (PFAM); PTHR11712 (PANTHER); PTHR11712 (PANTHER); PTHR11712:SF280 (PANTHER); IPR029058 (SUPERFAMILY)
+maker-scaffold92882_len2979_cov37_single-augustus-gene-0.6	hypothetical protein GLOINDRAFT_28943	377	7	1.41E-17	47.43%				no IPS match
+snap_masked-scaffold31343_len97772_cov85-processed-gene-0.73	---NA---	67							no IPS match
+augustus_masked-scaffold71092_len1380_cov83_single-processed-gene-0.0	adhesin	329	20	4.21E-22	55.45%	2	P:pathogenesis; C:outer membrane		IPR011049 (G3DSA:2.150.10.GENE3D); SSF101967 (SUPERFAMILY)

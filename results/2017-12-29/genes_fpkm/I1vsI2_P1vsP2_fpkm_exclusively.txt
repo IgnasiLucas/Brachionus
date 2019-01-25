@@ -1,0 +1,5 @@
+augustus_masked-scaffold1064_len15764_cov73-processed-gene-0.1	scaffold1064_len15764_cov73:5920-7291	I1	I2	OK	5.43776	0.641275	-3.084	-4.13337	5e-05	0.00107094	yes
+augustus_masked-scaffold111253_len4053_cov137_single-processed-gene-0.0	scaffold111253_len4053_cov137_single:1-3307	I1	I2	OK	2.62949	0.255912	-3.36106	-4.66798	5e-05	0.00107094	yes
+augustus_masked-scaffold71092_len1380_cov83_single-processed-gene-0.0	scaffold71092_len1380_cov83_single:247-1378	I1	I2	OK	12.6891	2.8838	-2.13755	-2.50116	5e-05	0.00107094	yes
+maker-scaffold92882_len2979_cov37_single-augustus-gene-0.6	scaffold92882_len2979_cov37_single:318-2499	I1	I2	OK	1.04647	0.150525	-2.79745	-2.48947	0.001	0.0129514	yes
+snap_masked-scaffold31343_len97772_cov85-processed-gene-0.73	scaffold31343_len97772_cov85:615-875	I1	I2	OK	4.30693	0	-inf	-nan	0.00135	0.0163561	yes

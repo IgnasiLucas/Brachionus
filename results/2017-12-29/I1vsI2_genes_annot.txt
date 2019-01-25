@@ -1,0 +1,54 @@
+snap_masked-scaffold67289_len7235_cov82-processed-gene-0.4	---NA---	60							no IPS match
+snap_masked-scaffold18534_len11849_cov79-processed-gene-0.6	---NA---	64							no IPS match
+snap_masked-scaffold18564_len7470_cov74-processed-gene-0.4	---NA---	73							no IPS match
+snap_masked-scaffold2677_len113996_cov84-processed-gene-0.58	---NA---	89							no IPS match
+snap_masked-scaffold7696_len67868_cov82-processed-gene-0.53	---NA---	76							no IPS match
+snap_masked-scaffold5659_len15252_cov75-processed-gene-0.11	---NA---	214							no IPS match
+snap_masked-scaffold2777_len13231_cov53-processed-gene-0.8	---NA---	67							no IPS match
+snap_masked-scaffold29204_len5972_cov72-processed-gene-0.3	---NA---	60							no IPS match
+snap_masked-scaffold14271_len4405_cov37_single-processed-gene-0.3	---NA---	74							no IPS match
+snap_masked-scaffold61816_len1020_cov90_single-processed-gene-0.1	---NA---	120							no IPS match
+augustus_masked-scaffold26415_len5762_cov115-processed-gene-0.1	---NA---	158				1	F:zinc ion binding		IPR007527 (PROSITE_PROFILES)
+snap_masked-scaffold9598_len134620_cov83-processed-gene-0.99	---NA---	72							no IPS match
+snap_masked-scaffold45875_len1783_cov43-processed-gene-0.1	---NA---	103							cd00303 (CDD)
+augustus_masked-scaffold653_len50200_cov76-processed-gene-0.4	---NA---	82							no IPS match
+snap_masked-scaffold2731_len3242_cov58-processed-gene-0.4	trehalase- partial	76	20	2.04E-10	63.3%	4	P:trehalose metabolic process; P:starch metabolic process; F:alpha,alpha-trehalase activity; P:sucrose metabolic process	EC:3.2.1.28	IPR001661 (PFAM); PTHR23403:SF1 (PANTHER); IPR001661 (PANTHER); IPR008928 (SUPERFAMILY)
+snap_masked-scaffold23599_len36319_cov81-processed-gene-0.19	---NA---	123							no IPS match
+augustus_masked-scaffold6594_len44691_cov84-processed-gene-0.5	zinc metallo ase nas-4-like	342	20	2.49E-36	51.2%	3	F:zinc ion binding; P:proteolysis; F:metalloendopeptidase activity	EC:3.4.24	IPR001506 (PRINTS); IPR006026 (SMART); IPR024079 (G3DSA:3.40.390.GENE3D); IPR001506 (PFAM); PTHR10127 (PANTHER); cd04280 (CDD); SSF55486 (SUPERFAMILY)
+snap_masked-scaffold16114_len7887_cov82-processed-gene-0.7	---NA---	70							no IPS match
+snap_masked-scaffold13273_len16928_cov74-processed-gene-0.8	---NA---	169							no IPS match
+snap_masked-scaffold103809_len6469_cov87_single-processed-gene-0.4	---NA---	85							no IPS match
+snap_masked-scaffold6991_len30046_cov77-processed-gene-0.13	---NA---	125							no IPS match
+snap_masked-scaffold78388_len1156_cov47_single-processed-gene-0.2	---NA---	122							no IPS match
+snap_masked-scaffold15547_len17352_cov83-processed-gene-0.14	---NA---	107							no IPS match
+snap_masked-scaffold35223_len18591_cov83_single-processed-gene-0.8	---NA---	67							no IPS match
+snap_masked-scaffold21455_len24815_cov70-processed-gene-0.14	---NA---	84							no IPS match
+snap_masked-scaffold1436_len14948_cov82-processed-gene-0.10	---NA---	193							no IPS match
+snap_masked-scaffold11115_len3106_cov43-processed-gene-0.3	---NA---	64							no IPS match
+snap_masked-scaffold6674_len6418_cov40-processed-gene-0.6	---NA---	66							no IPS match
+snap_masked-scaffold56294_len3154_cov80_single-processed-gene-0.3	---NA---	88							no IPS match
+snap_masked-scaffold21305_len16651_cov58-processed-gene-0.17	---NA---	111							no IPS match
+snap_masked-scaffold2384_len62678_cov77-processed-gene-0.32	---NA---	90							no IPS match
+snap_masked-scaffold3179_len36766_cov68-processed-gene-0.15	---NA---	93							no IPS match
+augustus_masked-scaffold20200_len4468_cov43-processed-gene-0.0	RNA-directed DNA polymerase from transposon BS	100	7	1.33E-8	53.57%				PTHR19446 (PANTHER)
+snap_masked-scaffold40439_len5757_cov74-processed-gene-0.6	---NA---	63							no IPS match
+snap_masked-scaffold16296_len31401_cov81-processed-gene-0.10	---NA---	73							no IPS match
+snap_masked-scaffold14675_len888_cov52-processed-gene-0.1	---NA---	67							no IPS match
+snap_masked-scaffold13757_len2602_cov37_single-processed-gene-0.1	---NA---	68							no IPS match
+snap_masked-scaffold12733_len2068_cov30-processed-gene-0.1	---NA---	105							no IPS match
+snap_masked-scaffold8360_len13805_cov47-processed-gene-0.12	---NA---	69							no IPS match
+snap_masked-scaffold18202_len5300_cov75-processed-gene-0.4	---NA---	73							no IPS match
+augustus_masked-scaffold110747_len1055_cov1462_single-processed-gene-0.0	---NA---	127							no IPS match
+snap_masked-scaffold13679_len58308_cov79-processed-gene-0.50	---NA---	63							no IPS match
+snap_masked-scaffold16374_len13450_cov47-processed-gene-0.8	---NA---	113							no IPS match
+snap_masked-scaffold23116_len8881_cov74-processed-gene-0.12	---NA---	67							no IPS match
+snap_masked-scaffold2818_len30076_cov78-processed-gene-0.16	---NA---	67							no IPS match
+snap_masked-scaffold138820_len8871_cov83_single-processed-gene-0.9	---NA---	138							IPR007588 (PFAM)
+snap_masked-scaffold56636_len15309_cov87-processed-gene-0.4	---NA---	82							no IPS match
+snap_masked-scaffold3551_len8329_cov80-processed-gene-0.6	---NA---	61							no IPS match
+snap_masked-scaffold59019_len1324_cov97-processed-gene-0.1	---NA---	63							no IPS match
+snap_masked-scaffold60830_len4637_cov87-processed-gene-0.2	---NA---	60							no IPS match
+augustus_masked-scaffold24155_len1293_cov42-processed-gene-0.0	---NA---	125							no IPS match
+augustus_masked-scaffold52938_len1685_cov124-processed-gene-0.0	---NA---	155							Coil (COILS)
+snap_masked-scaffold4565_len41309_cov79-processed-gene-0.32	---NA---	76							no IPS match
+snap_masked-scaffold20864_len27141_cov76-processed-gene-0.27	---NA---	65							no IPS match
