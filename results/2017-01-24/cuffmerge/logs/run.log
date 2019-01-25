@@ -1,0 +1,17 @@
+/data/eva/Brachionus/bin/cuffmerge -p 24 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta -o ./ ./assemblies.txt
+gtf_to_sam -F ./3C_S11.cufflinks/transcripts.gtf .//tmp/gtf2sam_file14IrlB
+gtf_to_sam -F ./1A_S8.cufflinks/transcripts.gtf .//tmp/gtf2sam_filemr76sh
+gtf_to_sam -F ./2C_S5.cufflinks/transcripts.gtf .//tmp/gtf2sam_file8YE9nh
+gtf_to_sam -F ./3A_S9.cufflinks/transcripts.gtf .//tmp/gtf2sam_filedTQmtA
+gtf_to_sam -F ./6A_S3.cufflinks/transcripts.gtf .//tmp/gtf2sam_filetw33ue
+gtf_to_sam -F ./5A_S2.cufflinks/transcripts.gtf .//tmp/gtf2sam_file9TUnGd
+gtf_to_sam -F ./4C_S12.cufflinks/transcripts.gtf .//tmp/gtf2sam_fileOSKvPw
+gtf_to_sam -F ./1C_S1.cufflinks/transcripts.gtf .//tmp/gtf2sam_filebJYZN9
+gtf_to_sam -F ./6C_S10.cufflinks/transcripts.gtf .//tmp/gtf2sam_fileZmv3x5
+gtf_to_sam -F ./2A_S7.cufflinks/transcripts.gtf .//tmp/gtf2sam_filedaM5il
+gtf_to_sam -F ./4A_S6.cufflinks/transcripts.gtf .//tmp/gtf2sam_fileW6XLmU
+gtf_to_sam -F ./5C_S4.cufflinks/transcripts.gtf .//tmp/gtf2sam_files8NY8N
+sort -k 3,3 -k 4,4n --temporary-directory=.//tmp/ .//tmp/gtf2sam_file14IrlB .//tmp/gtf2sam_filemr76sh .//tmp/gtf2sam_file8YE9nh .//tmp/gtf2sam_filedTQmtA .//tmp/gtf2sam_filetw33ue .//tmp/gtf2sam_file9TUnGd .//tmp/gtf2sam_fileOSKvPw .//tmp/gtf2sam_filebJYZN9 .//tmp/gtf2sam_fileZmv3x5 .//tmp/gtf2sam_filedaM5il .//tmp/gtf2sam_fileW6XLmU .//tmp/gtf2sam_files8NY8N > .//tmp/mergeSam_fileQ8XH84
+cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 .//tmp/mergeSam_fileQ8XH84
+cuffcompare -o tmp_meta_asm -C -G  -r /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff  -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta .///transcripts.gtf
+cuffcompare -o tmp_meta_asm -C -G  -r /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff  -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta .///merged.gtf

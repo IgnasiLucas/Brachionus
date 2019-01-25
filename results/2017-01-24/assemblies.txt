@@ -1,0 +1,12 @@
+./3C_S11.cufflinks/transcripts.gtf
+./1A_S8.cufflinks/transcripts.gtf
+./2C_S5.cufflinks/transcripts.gtf
+./3A_S9.cufflinks/transcripts.gtf
+./6A_S3.cufflinks/transcripts.gtf
+./5A_S2.cufflinks/transcripts.gtf
+./4C_S12.cufflinks/transcripts.gtf
+./1C_S1.cufflinks/transcripts.gtf
+./6C_S10.cufflinks/transcripts.gtf
+./2A_S7.cufflinks/transcripts.gtf
+./4A_S6.cufflinks/transcripts.gtf
+./5C_S4.cufflinks/transcripts.gtf
