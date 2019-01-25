@@ -1,0 +1,17 @@
+augustus_masked-scaffold1064_len15764_cov73-processed-gene-0.0
+augustus_masked-scaffold1064_len15764_cov73-processed-gene-0.1
+augustus_masked-scaffold110747_len1055_cov1462_single-processed-gene-0.0
+augustus_masked-scaffold111253_len4053_cov137_single-processed-gene-0.0
+augustus_masked-scaffold11334_len30931_cov77-processed-gene-0.9
+augustus_masked-scaffold11855_len54708_cov82-processed-gene-0.7
+augustus_masked-scaffold54693_len27990_cov86-processed-gene-0.1
+augustus_masked-scaffold54693_len27990_cov86-processed-gene-0.7
+augustus_masked-scaffold653_len50200_cov76-processed-gene-0.4
+augustus_masked-scaffold6594_len44691_cov84-processed-gene-0.5
+augustus_masked-scaffold71092_len1380_cov83_single-processed-gene-0.0
+maker-scaffold103507_len21562_cov89-augustus-gene-0.16
+maker-scaffold2606_len8819_cov60-augustus-gene-0.13,snap_masked-scaffold2606_len8819_cov60-processed-gene-0.9
+maker-scaffold92882_len2979_cov37_single-augustus-gene-0.6
+snap_masked-scaffold1728_len47034_cov76-processed-gene-0.22,snap_masked-scaffold1728_len47034_cov76-processed-gene-0.23
+snap_masked-scaffold3642_len34489_cov77-processed-gene-0.25,snap_masked-scaffold3642_len34489_cov77-processed-gene-0.26
+snap_masked-scaffold40811_len14186_cov88-processed-gene-0.3
