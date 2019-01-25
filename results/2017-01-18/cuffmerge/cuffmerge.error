@@ -1,0 +1,40 @@
+
+[Thu Jan 19 17:53:00 2017] Beginning transcriptome assembly merge
+-------------------------------------------
+
+[Thu Jan 19 17:53:00 2017] Preparing output location .//
+[Thu Jan 19 17:53:23 2017] Converting GTF files to SAM
+[17:53:23] Loading reference annotation.
+[17:53:30] Loading reference annotation.
+[17:53:37] Loading reference annotation.
+[17:53:45] Loading reference annotation.
+[17:53:52] Loading reference annotation.
+[17:53:59] Loading reference annotation.
+[17:54:05] Loading reference annotation.
+[17:54:12] Loading reference annotation.
+[17:54:19] Loading reference annotation.
+[17:54:27] Loading reference annotation.
+[17:54:38] Loading reference annotation.
+[17:54:48] Loading reference annotation.
+[Thu Jan 19 17:54:58 2017] Quantitating transcripts
+You are using Cufflinks v2.2.1, which is the most recent release.
+Command line:
+cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 .//tmp/mergeSam_file15UMhh 
+[bam_header_read] EOF marker is absent. The input is probably truncated.
+[bam_header_read] invalid BAM binary header (this is not a BAM file).
+File .//tmp/mergeSam_file15UMhh doesn't appear to be a valid BAM file, trying SAM...
+[17:55:03] Loading reference annotation.
+[17:55:34] Inspecting reads and determining fragment length distribution.
+Processed 41425 loci.                       
+> Map Properties:
+>	Normalized Map Mass: 659544.00
+>	Raw Map Mass: 659544.00
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+[17:55:41] Assembling transcripts and estimating abundances.
+Processed 41425 loci.                       
+[Thu Jan 19 17:56:10 2017] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff
+You are using Cufflinks v2.2.1, which is the most recent release.
+[Thu Jan 19 17:56:46 2017] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff
+You are using Cufflinks v2.2.1, which is the most recent release.
