@@ -1,0 +1,117 @@
+You are using Cufflinks v2.2.1, which is the most recent release.
+[11:50:21] Loading reference annotation and sequence.
+[11:50:31] Inspecting maps and determining fragment length distributions.
+[12:03:30] Modeling fragment count overdispersion.
+[12:05:37] Modeling fragment count overdispersion.
+[12:07:44] Modeling fragment count overdispersion.
+[12:09:52] Modeling fragment count overdispersion.
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 34803935.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 37231545.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 38642142.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 37312274.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 22867616.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 37279848.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 19582497.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 26365951.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 24723377.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 30208919.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 24246575.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+> Map Properties:
+>	Normalized Map Mass: 29313494.18
+>	Raw Map Mass: 28465694.00
+>	Number of Multi-Reads: 0 (with 0 total hits)
+>	Fragment Length Distribution: Truncated Gaussian (default)
+>	              Default Mean: 200
+>	           Default Std Dev: 80
+[12:12:01] Calculating preliminary abundance estimates
+Processed 38852 loci.                       
+[13:20:40] Learning bias parameters.
+[13:30:49] Testing for differential expression and regulation in locus.
+Processed 38852 loci.                       
+Performed 244989 isoform-level transcription difference tests
+Performed 198684 tss-level transcription difference tests
+Performed 161647 gene-level transcription difference tests
+Performed 150179 CDS-level transcription difference tests
+Performed 34050 splicing tests
+Performed 28998 promoter preference tests
+Performing 9882 relative CDS output tests
+Writing isoform-level FPKM tracking
+Writing TSS group-level FPKM tracking
+Writing gene-level FPKM tracking
+Writing CDS-level FPKM tracking
+Writing isoform-level count tracking
+Writing TSS group-level count tracking
+Writing gene-level count tracking
+Writing CDS-level count tracking
+Writing isoform-level read group tracking
+Writing TSS group-level read group tracking
+Writing gene-level read group tracking
+Writing CDS-level read group tracking
+Writing read group info
+Writing run info
