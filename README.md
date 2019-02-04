@@ -9,7 +9,24 @@ some details to the analysis. Below, I will update the summaries of the results 
 order. Each entry corresponds to one subfolder in the results folder, named after the day the analysis
 started. The README.sh executable and documented files are meant to reproduce the results in each folder.
 
+All the analyses are run in a Linux-64 platform. The file spec-file.txt is created by:
+
+```bash
+conda list --explicit > spec-file.txt
+```
+
+It can be used to create a conda environment with the same packages used originally to produce the
+results. To re-create the conda environment that I call Brachionus do this:
+
+```bash
+conda create --name Brachionus --file spec-file.txt
+```
+
 ---------------------------------------------------------------------------------------------------
+# 2019-02-01
+Testing an alternative method of transcript quantification, for the sake of robustness of results. I run
+kallisto, which is fast because it does not really map the reads to the transcripts, but performs a
+pseudoalignment, based on k-mers.
 
 # 2017-12-29
 Analysis of Gene Ontology terms.
@@ -69,35 +86,3 @@ Quality control of RNA-seq reads.
 | 6A_S3  |        20 |   74.48 |        75 | 55388301 | 96.14 | 94.40 |    2 |  34.46  |  36  |
 | 6C_S10 |        22 |   74.49 |        75 | 42730345 | 95.99 | 94.23 |    2 |  34.42  |  36  |
 
-
-
-
-
-
-
- 
-#2017-01-31
-IN this directory we tried to know if the run is completed since error "Write failed: Broken pipe" appeared
-
-#Cufflinks: cuffdiff (-q) 
-Same script than before (2017-01-27) but adding "date" at the end of script
-
-No error or broken pipe were found
-
-Results:  
-
--------------------------------------------------------------------------------------------------
-#2017-10-27
-Analyses of differential expression genes (DEGs) for each condition (regime/diapause). List of genes with differential expression (q-val<0.05) y other list (q-val<0.05 and log2FC>2).
-
--------------------------------------------------------------------------------------------------
-#2017-11-30
-DEGs of interes exclusively and shared between comparations
-
-------------------------------------------------------------------------------------------------
-#2017-12-07
-Functionallity assignment to DEGs of interest
-1.COmparations
-2.Up_regulated in for each condition (regime/diapause)
-
-------------------------------------------------------------------------------------------------
