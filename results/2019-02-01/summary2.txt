@@ -1,0 +1,4 @@
+Number of expressed exons:               277504
+Number of expressed and predicted exons: 188096
+Number of predicted genes:               54870
+Number of predicted and expressed genes: 52132
