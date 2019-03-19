@@ -26,7 +26,10 @@ conda create --name Brachionus --file spec-file.txt
 # 2019-02-01
 Testing an alternative method of transcript quantification, for the sake of robustness of results. I run
 kallisto, which is fast because it does not really map the reads to the transcripts, but performs a
-pseudoalignment, based on k-mers.
+pseudoalignment, based on k-mers. Kallisto did not work well: only ~30% of reads were pseudo-aligned.
+The problem seems to be the fact that only about 67% of sequenced genomic fragments overlap with
+predicted transcripts. Plus, the reference genome contains unknown sequences that could compromise the
+pseudoalignment.
 
 # 2017-12-29
 Analysis of Gene Ontology terms.
