@@ -14,18 +14,18 @@ C5 <- read.table('z5C_S4')
 C6 <- read.table('z6C_S10')
 
 p <- ggplot() + 
-     boxplot_geom(data=A1, mapping=aes(x=1, y=V1)) +
-     boxplot_geom(data=C1, mapping=aes(x=2, y=V1)) +
-     boxplot_geom(data=A2, mapping=aes(x=3, y=V1)) +
-     boxplot_geom(data=C2, mapping=aes(x=4, y=V1)) +
-     boxplot_geom(data=A3, mapping=aes(x=5, y=V1)) +
-     boxplot_geom(data=C3, mapping=aes(x=6, y=V1)) +
-     boxplot_geom(data=A4, mapping=aes(x=7, y=V1)) + 
-     boxplot_geom(data=C4, mapping=aes(x=8, y=V1)) + 
-     boxplot_geom(data=A5, mapping=aes(x=9, y=V1)) +
-     boxplot_geom(data=C5, mapping=aes(x=10, y=V1)) + 
-     boxplot_geom(data=A6, mapping=aes(x=11, y=V1)) +
-     boxplot_geom(data=C6, mapping=aes(x=12, y=V1)) +
+     geom_boxplot(data=A1, mapping=aes(x=1, y=log(V1))) +
+     geom_boxplot(data=C1, mapping=aes(x=2, y=log(V1))) +
+     geom_boxplot(data=A2, mapping=aes(x=3, y=log(V1))) +
+     geom_boxplot(data=C2, mapping=aes(x=4, y=log(V1))) +
+     geom_boxplot(data=A3, mapping=aes(x=5, y=log(V1))) +
+     geom_boxplot(data=C3, mapping=aes(x=6, y=log(V1))) +
+     geom_boxplot(data=A4, mapping=aes(x=7, y=log(V1))) + 
+     geom_boxplot(data=C4, mapping=aes(x=8, y=log(V1))) + 
+     geom_boxplot(data=A5, mapping=aes(x=9, y=log(V1))) +
+     geom_boxplot(data=C5, mapping=aes(x=10, y=log(V1))) + 
+     geom_boxplot(data=A6, mapping=aes(x=11, y=log(V1))) +
+     geom_boxplot(data=C6, mapping=aes(x=12, y=log(V1))) +
      labs(x='Samples', y='Intron lengths')
 
 ggsave('introns.png', plot=p)

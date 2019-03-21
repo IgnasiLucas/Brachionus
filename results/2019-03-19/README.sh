@@ -4,7 +4,9 @@
 #				==========
 #
 # Here I want to replicate the mapping of reads with tophat. I notice that originally
-# we did not specify the library type.
+# we did not specify the library type. Note that I use a different conda environment
+# to run this analysis, which requires tophat. The environment is saved in the local
+# spec-file.txt.
 
 REFERENCE=/data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta
 FASTQDIR=/data/eva/Brachionus/data/Transcriptoma/Trim_reads
@@ -28,9 +30,6 @@ for name in ${SAMPLE[@]}; do
    fi
 
    if [ ! -e $name/accepted_hits.bam ]; then
-#      if [ ! -e $name.fastq ]; then
-#         gunzip -c $FASTQDIR/$name.trim.fastq.gz > $name.fastq
-#      fi
       tophat  --read-mismatches 1 \
               --read-gap-length 1 \
               --read-realign-edit-dist 0 \
@@ -44,15 +43,9 @@ for name in ${SAMPLE[@]}; do
               --rg-sample $name \
               --output-dir ./$name \
               ./index/B.plicatilis $FASTQDIR/$name.trim.fastq.gz 1> $name/log 2> $name/error
-
-#      if [ -e $name/accepted_hits.bam ] && [ -e $name.fastq ]; then
-#         rm $name.fastq
-#      fi
    fi
 done
 
-# I want to create the summary table if it doesn't exist or if it
-# is older than any algin_summary.txt file in this folder.
 if [ ! -e summary_mapping.txt ] || [ $(find . -name align_summary.txt -newer summary_mapping.txt | wc -l) -gt 0 ]; then
    echo -e "Sample\tReads\tMapped\tRate" > summary_mapping.txt
    for i in ${SAMPLE[@]}; do
@@ -74,15 +67,8 @@ fi
 
 for i in ${SAMPLE[@]}; do
    if [ ! -e $i/indels.png ]; then
-      # First I create a temporal file with the data of this sample
-      # to pass to R. It will be just one list of sizes, where deletions
-      # have negative size:
       cut -f 5 $i/deletions.bed | tail -n +2 | sed 's/^/-/' > zindels
       cut -f 5 $i/insertions.bed | tail -n +2 >> zindels
-      # This makes a plot in this folder, and I move it to its sample
-      # folder. Even though I'm using --args to pass the name of the sample
-      # to the R script, I find it easier to move the figure after it's done
-      # than to tell the script how to use the name to save it in the right folder.
       R --no-save --args $i < plot.R
       mv indels.png $i/indels.png
       rm zindels
@@ -100,4 +86,27 @@ if [ ! -e introns.png ] || [ $(find . -name junctions.bed -newer introns.png) -g
       tail -n +2 $i/junctions.bed | cut -f 12 | cut -d ',' -f 2 > z$i
    done
    R --no-save < plot2.R
+   rm z*
 fi
+
+# CONCLUSIONS
+# ===========
+#
+# The small modification of the arguments passed to Tophat did not result in any
+# difference in the mapping, as assessed by the mapping success and the distribution
+# of indel lengths. All samples have equivalent intron length distributions, which
+# confirms the homogeneous quality of the samples.
+
+# CLEAN UP
+# ========
+
+for i in ${SAMPLE[@]}; do
+   if [ -d $i/logs ];              then rm -r $i/logs; fi
+   if [ -e $i/align_summary.txt ]; then rm $i/align_summary.txt; fi
+   if [ -e $i/deletions.bed ];     then rm $i/deletions.bed; fi
+   if [ -e $i/error ];             then rm $i/error; fi
+   if [ -e $i/insertions.bed ];    then rm $i/insertions.bed; fi
+   if [ -e $i/junctions.bed ];     then rm $i/junctions.bed; fi
+   if [ -e $i/prep_reads.info ];   then rm $i/prep_reads.info; fi
+   if [ -e $i/unmapped.bam ];      then rm $i/unmapped.bam; fi
+done
