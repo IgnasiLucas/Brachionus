@@ -1,0 +1,12 @@
+./6C_S10/transcripts.gtf
+./1A_S8/transcripts.gtf
+./4A_S6/transcripts.gtf
+./5A_S2/transcripts.gtf
+./6A_S3/transcripts.gtf
+./3C_S11/transcripts.gtf
+./3A_S9/transcripts.gtf
+./2A_S7/transcripts.gtf
+./5C_S4/transcripts.gtf
+./4C_S12/transcripts.gtf
+./1C_S1/transcripts.gtf
+./2C_S5/transcripts.gtf
