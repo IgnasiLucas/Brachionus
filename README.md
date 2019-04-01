@@ -23,6 +23,21 @@ conda create --name Brachionus --file spec-file.txt
 ```
 
 ---------------------------------------------------------------------------------------------------
+
+# 2019-03-29
+I want to quantify the expression using an alternative method. Here I use RSEM to obtain raw counts
+of reads mapped to transcripts. This is the kind of input used by edgeR or DSeq2.
+
+# 2019-03-21
+Here I run cufflinks and cuffmerge to identify expressed transcripts. This is equivalent to what
+Eva did on 2017-01-24. Here I made sure to include information on the type of library, since it is
+stranded, with all reads expected on the reverse strand of the transcripts.
+
+# 2019-03-19
+Here I repeat the mapping of reads to the reference genome using Tophat. The main difference with
+respect with the original mapping (Eva, 2016-12-19) is that I specify here the type of library. The
+results are very much alike.
+
 # 2019-02-01
 Testing an alternative method of transcript quantification, for the sake of robustness of results. I run
 kallisto, which is fast because it does not really map the reads to the transcripts, but performs a
