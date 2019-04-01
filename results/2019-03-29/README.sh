@@ -14,7 +14,8 @@
 
 MERGED=../2019-03-21/merged.gtf
 REFERENCE=../../data/reference.fa
-BAMDIR=../2019-03-19
+# BAMDIR=../2019-03-19
+FASTQDIR=/data/eva/Brachionus/data/Transcriptoma/Trim_reads
 SAMPLE=( 1A_S8 1C_S1  2A_S7 2C_S5 3A_S9 3C_S11
          4A_S6 4C_S12 5A_S2 5C_S4 6A_S3 6C_S10 )
 
@@ -50,22 +51,24 @@ fi
 
 # We already aligned the reads with Tophat in 2019-03-19. Thus, it makes sense to take advantage
 # of the 'convert-sam-for-rsem' script and save the alignment step here.
-
-for i in ${SAMPLE[@]}; do
-   if [ ! -d $i ]; then mkdir $i; fi
-   if [ ! -d $i/$i.bam ]; then
-      convert-sam-for-rsem --num-threads 4 \
-                           --memory-per-thread 2G \
-                           $BAMDIR/$i/accepted_hits.bam \
-                           $i/$i &
-   fi
-done
-wait
+#
+# for i in ${SAMPLE[@]}; do
+#   if [ ! -d $i ]; then mkdir $i; fi
+#   if [ ! -e $i/$i.bam ]; then
+#      convert-sam-for-rsem --num-threads 4 \
+#                           --memory-per-thread 2G \
+#                           $BAMDIR/$i/accepted_hits.bam \
+#                           $i/$i &
+#   fi
+# done
+# wait
+#
+# Unfortunately, the original mapping was to the reference genome, not to the set of transcripts.
+# Thus, it is not valid, and I need to let RSEM do the mapping.
 
 for i in ${SAMPLE[@]}; do
    if [ ! -e $i/$i.isoforms.results ]; then
-      rsem-calculate-expression --alignments \
-                                --strandedness reverse \
+      rsem-calculate-expression --strandedness reverse \
                                 --num-threads 4 \
                                 --seed 19770319 \
                                 --calc-pme \
@@ -73,8 +76,12 @@ for i in ${SAMPLE[@]}; do
                                 --no-bam-output \
                                 --fragment-length-mean 200.0 \
                                 --fragment-length-sd 80.0 \
-                                $i/$i.bam \
-                                rsem-out/merged
+                                $FASTQDIR/$i.trim.fastq.gz \
+                                rsem-out/merged \
+                                $i/$i &
+   fi
+   if [ ! -e $i/$i.pdf ]; then
+      rsem-plot-model $i/$i $i/$i.pdf
    fi
 done
 wait
