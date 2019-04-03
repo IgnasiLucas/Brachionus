@@ -86,3 +86,41 @@ for i in ${SAMPLE[@]}; do
 done
 wait
 
+# Below I extract the counts from every sample and paste them together in one file
+# for genes and one for isoforms. I checked that results from all samples have the
+# same number of rows, and in the same order:
+#
+# find . -name '*.genes.results' -exec bash -c 'cut -f 1 $1 | md5sum' _ '{}' \;
+# find . -name '*.isoforms.results' -exec bash -c 'cut -f 1 $1 | md5sum' _ '{}' \;
+
+COUNTS=( zero one two three four ExpCount six seven PostCount )
+for what in genes isoforms; do
+   for how in 5 8; do
+      if [ ! -e $what.${COUNTS[$how]}.txt ]; then
+         echo -e "$what\t1A_S8\t1C_S1\t2A_S7\t2C_S5\t3A_S9\t3C_S11\t4A_S6\t4C_S12\t5A_S2\t5C_S4\t6A_S3\t6C_S10" > $what.${COUNTS[$how]}.txt
+         # Column 5 is the expected count, and column 8 is the mean posterior count.
+         paste <(cut -f 1,$how 1A_S8/1A_S8.$what.results | tail -n +2) \
+               <(cut -f $how   1C_S1/1C_S1.$what.results | tail -n +2) \
+               <(cut -f $how   2A_S7/2A_S7.$what.results | tail -n +2) \
+               <(cut -f $how   2C_S5/2C_S5.$what.results | tail -n +2) \
+               <(cut -f $how   3A_S9/3A_S9.$what.results | tail -n +2) \
+               <(cut -f $how 3C_S11/3C_S11.$what.results | tail -n +2) \
+               <(cut -f $how   4A_S6/4A_S6.$what.results | tail -n +2) \
+               <(cut -f $how 4C_S12/4C_S12.$what.results | tail -n +2) \
+               <(cut -f $how   5A_S2/5A_S2.$what.results | tail -n +2) \
+               <(cut -f $how   5C_S4/5C_S4.$what.results | tail -n +2) \
+               <(cut -f $how   6A_S3/6A_S3.$what.results | tail -n +2) \
+               <(cut -f $how 6C_S10/6C_S10.$what.results | tail -n +2) \
+               >> $what.${COUNTS[$how]}.txt
+      fi
+   done
+done
+
+if [ ! -e Expected_posterior.png ]; then
+   Rscript plot.R
+fi
+
+# CONCLUSION
+# ----------
+#
+# Both the expected and the posterior mean count are equivalent.
