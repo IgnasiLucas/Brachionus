@@ -93,7 +93,7 @@ wait
 # find . -name '*.genes.results' -exec bash -c 'cut -f 1 $1 | md5sum' _ '{}' \;
 # find . -name '*.isoforms.results' -exec bash -c 'cut -f 1 $1 | md5sum' _ '{}' \;
 
-COUNTS=( zero one two three four ExpCount six seven PostCount )
+COUNTS=( zero one two three four ExpCount six seven PostCount PostCount)
 for what in genes isoforms; do
    for how in 5 8; do
       if [ ! -e $what.${COUNTS[$how]}.txt ]; then
