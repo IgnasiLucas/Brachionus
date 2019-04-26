@@ -64,4 +64,21 @@
 #  | 6A_S3  | Predictable      | No               |   6   |
 #  | 6C_S10 | Predictable      | Yes              |   6   |
 #  +--------+------------------+------------------+-------+
+#
+# The problem then is that the design matrix does not have full rank. Not all
+# coefficients can be estimated, because of dependence among factors. This happens
+# because the selective regime is redundant with the blocks or populations. One
+# way to deal with this is to remove the selective regime from the design matrix,
+# and use only diapause condition and population, additively. We are definitely
+# not interested in the interaction between diapause condition and population.
+# With such a design, we can still test for the (additive) effect of selective
+# regime.
+#
+# However, we would miss the chance to examine the interaction between selective
+# regime and diapause. For that, we need to use a different design matrix, with
+# only selective regime and diapause condition.
+
+GENE_COUNTS=../2019-03-29/genes.PostCount.txt
+ISOFORM_COUNTS=../2019-03-29/isoforms.PostCount.txt
+
 
