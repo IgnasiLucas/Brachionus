@@ -82,3 +82,12 @@ GENE_COUNTS=../2019-03-29/genes.PostCount.txt
 ISOFORM_COUNTS=../2019-03-29/isoforms.PostCount.txt
 
 
+if [ ! -d genes ]; then mkdir genes; fi
+if [ ! -e genes/MDS.png ]; then
+   Rscript --no-save RunEdgeR.R $GENE_COUNTS genes
+fi
+
+if [ ! -d isoforms ]; then mkdir isoforms; fi
+if [ ! -e isoforms/MDS.png ]; then
+   Rscript --no-save RunEdgeR.R $ISOFORM_COUNTS isoforms
+fi
