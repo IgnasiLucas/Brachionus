@@ -1,17 +1,17 @@
 /data/joiglu/miniconda3/envs/Brachionus/bin/cuffmerge -p 24 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta -o ./ ./assemblies.txt
-gtf_to_sam -F ./6C_S10/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_ax33icl1
-gtf_to_sam -F ./1A_S8/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_8rsh6hj3
-gtf_to_sam -F ./4A_S6/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_5pqimbu0
-gtf_to_sam -F ./5A_S2/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_kpg969at
-gtf_to_sam -F ./6A_S3/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_z3gfxdsi
-gtf_to_sam -F ./3C_S11/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_3oypm5eg
-gtf_to_sam -F ./3A_S9/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_owej81tw
-gtf_to_sam -F ./2A_S7/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_knaruq4v
-gtf_to_sam -F ./5C_S4/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_a3eb3s7e
-gtf_to_sam -F ./4C_S12/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_wt9bdbms
-gtf_to_sam -F ./1C_S1/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_hk7532xs
-gtf_to_sam -F ./2C_S5/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_fok3uv8r
-sort -k 3,3 -k 4,4n --temporary-directory=.//tmp/ /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_ax33icl1 /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_8rsh6hj3 /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_5pqimbu0 /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_kpg969at /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_z3gfxdsi /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_3oypm5eg /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_owej81tw /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_knaruq4v /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_a3eb3s7e /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_wt9bdbms /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_hk7532xs /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_fok3uv8r > /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_v4e_wxyr
-cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_v4e_wxyr
+gtf_to_sam -F ./6C_S10/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam__h2g9fox
+gtf_to_sam -F ./1A_S8/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_vv0nhbhw
+gtf_to_sam -F ./4A_S6/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_bj7s7n55
+gtf_to_sam -F ./5A_S2/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_pg9q5vwq
+gtf_to_sam -F ./6A_S3/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_pk247ael
+gtf_to_sam -F ./3C_S11/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_cwmt_qkz
+gtf_to_sam -F ./3A_S9/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_f8ubv78d
+gtf_to_sam -F ./2A_S7/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_gnmjbo2l
+gtf_to_sam -F ./5C_S4/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_oplyxkdl
+gtf_to_sam -F ./4C_S12/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_1l6dyrur
+gtf_to_sam -F ./1C_S1/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_hczwxyo4
+gtf_to_sam -F ./2C_S5/transcripts.gtf /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_na6l4sai
+sort -k 3,3 -k 4,4n --temporary-directory=.//tmp/ /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam__h2g9fox /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_vv0nhbhw /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_bj7s7n55 /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_pg9q5vwq /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_pk247ael /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_cwmt_qkz /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_f8ubv78d /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_gnmjbo2l /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_oplyxkdl /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_1l6dyrur /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_hczwxyo4 /data/joiglu/Brachionus/results/2019-03-21/tmp/gtf2sam_na6l4sai > /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_fsbvj966
+cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_fsbvj966
 cuffcompare -o tmp_meta_asm -C -G  -r /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff  -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta .///transcripts.gtf
 cuffcompare -o tmp_meta_asm -C -G  -r /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff  -s /data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta .///merged.gtf

@@ -1,16 +1,16 @@
 Warning: Could not connect to update server to verify current version. Please check at the Cufflinks website (http://cufflinks.cbcb.umd.edu).
-[23:05:17] Loading reference annotation.
-[23:05:37] Inspecting reads and determining fragment length distribution.
+[18:33:20] Loading reference annotation.
+[18:33:42] Inspecting reads and determining fragment length distribution.
 > Processed 61223 loci.                        [*************************] 100%
 > Map Properties:
 >	Normalized Map Mass: 30640303.00
 >	Raw Map Mass: 30640303.00
 >	Number of Multi-Reads: 0 (with 0 total hits)
->	Fragment Length Distribution: Truncated Gaussian (default)
->	              Default Mean: 200
+>	Fragment Length Distribution: Truncated Gaussian (user-specified)
+>	              Default Mean: 310
 >	           Default Std Dev: 80
-[23:07:56] Assembling transcripts and initializing abundances for multi-read correction.
+[18:36:01] Assembling transcripts and initializing abundances for multi-read correction.
 > Processed 61223 loci.                        [*************************] 100%
-[23:14:13] Loading reference annotation.
-[23:14:26] Re-estimating abundances with multi-read correction.
-> Processed 42517 loci.                        [*************************] 100%
+[18:42:25] Loading reference annotation.
+[18:42:38] Re-estimating abundances with multi-read correction.
+> Processed 42450 loci.                        [*************************] 100%

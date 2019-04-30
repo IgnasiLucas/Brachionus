@@ -1,40 +1,40 @@
-[00:36:12] Loading reference annotation.
-[00:36:19] Loading reference annotation.
-[00:36:27] Loading reference annotation.
-[00:36:34] Loading reference annotation.
-[00:36:41] Loading reference annotation.
-[00:36:49] Loading reference annotation.
-[00:36:56] Loading reference annotation.
-[00:37:03] Loading reference annotation.
-[00:37:11] Loading reference annotation.
-[00:37:18] Loading reference annotation.
-[00:37:25] Loading reference annotation.
-[00:37:32] Loading reference annotation.
+[20:06:38] Loading reference annotation.
+[20:06:46] Loading reference annotation.
+[20:06:53] Loading reference annotation.
+[20:07:00] Loading reference annotation.
+[20:07:08] Loading reference annotation.
+[20:07:15] Loading reference annotation.
+[20:07:22] Loading reference annotation.
+[20:07:29] Loading reference annotation.
+[20:07:37] Loading reference annotation.
+[20:07:44] Loading reference annotation.
+[20:07:51] Loading reference annotation.
+[20:07:58] Loading reference annotation.
 Warning: Could not connect to update server to verify current version. Please check at the Cufflinks website (http://cufflinks.cbcb.umd.edu).
 Command line:
-cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_v4e_wxyr 
+cufflinks -o .// -F 0.05 -g /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff -q --overhang-tolerance 200 --library-type=transfrags -A 0.0 --min-frags-per-transfrag 0 --no-5-extend -p 24 /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_fsbvj966 
 [bam_header_read] EOF marker is absent. The input is probably truncated.
 [bam_header_read] invalid BAM binary header (this is not a BAM file).
-File /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_v4e_wxyr doesn't appear to be a valid BAM file, trying SAM...
-[00:37:41] Loading reference annotation.
-[00:38:02] Inspecting reads and determining fragment length distribution.
-Processed 38686 loci.                       
+File /data/joiglu/Brachionus/results/2019-03-21/tmp/mergeSam_fsbvj966 doesn't appear to be a valid BAM file, trying SAM...
+[20:08:07] Loading reference annotation.
+[20:08:27] Inspecting reads and determining fragment length distribution.
+Processed 38486 loci.                       
 > Map Properties:
->	Normalized Map Mass: 811449.00
->	Raw Map Mass: 811449.00
+>	Normalized Map Mass: 813093.00
+>	Raw Map Mass: 813093.00
 >	Fragment Length Distribution: Truncated Gaussian (default)
 >	              Default Mean: 200
 >	           Default Std Dev: 80
-[00:38:07] Assembling transcripts and estimating abundances.
-Processed 38686 loci.                       
+[20:08:33] Assembling transcripts and estimating abundances.
+Processed 38486 loci.                       
 Warning: Could not connect to update server to verify current version. Please check at the Cufflinks website (http://cufflinks.cbcb.umd.edu).
 Warning: Could not connect to update server to verify current version. Please check at the Cufflinks website (http://cufflinks.cbcb.umd.edu).
 
-[Fri Mar 22 00:35:44 2019] Beginning transcriptome assembly merge
+[Mon Apr 29 20:06:10 2019] Beginning transcriptome assembly merge
 -------------------------------------------
 
-[Fri Mar 22 00:35:44 2019] Preparing output location .//
-[Fri Mar 22 00:36:12 2019] Converting GTF files to SAM
-[Fri Mar 22 00:37:41 2019] Quantitating transcripts
-[Fri Mar 22 00:38:20 2019] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff
-[Fri Mar 22 00:38:51 2019] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff
+[Mon Apr 29 20:06:10 2019] Preparing output location .//
+[Mon Apr 29 20:06:38 2019] Converting GTF files to SAM
+[Mon Apr 29 20:08:07 2019] Quantitating transcripts
+[Mon Apr 29 20:08:46 2019] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff
+[Mon Apr 29 20:09:19 2019] Comparing against reference file /data/eva/Brachionus/data/Transcriptoma/Annotation/maker2.all.gff

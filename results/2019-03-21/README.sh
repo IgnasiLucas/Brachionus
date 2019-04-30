@@ -5,7 +5,8 @@
 #
 # Here I want to run cufflinks again, as Eva did in 2017-01-24, just to check
 # the effect of some options that were not used back then, such as the library
-# type.
+# type. Also, the mean fragment length is 310, not 200 bp that is set by default.
+# We do not know the standard deviation of the library size, so I leave it at 80.
 
 REFERENCE=/data/eva/Brachionus/data/Transcriptoma/Genome/Brachionus_plicatilis_scaffold_min500.fasta
 BAMDIR=../2019-03-19
@@ -14,7 +15,7 @@ SAMPLE=( 1A_S8 1C_S1  2A_S7 2C_S5 3A_S9 3C_S11
          4A_S6 4C_S12 5A_S2 5C_S4 6A_S3 6C_S10 )
 
 
-#Cufflink-Assemble expressed genes and transcripts
+#Cufflink-Assemble expressed genes and transcripts.
 for i in ${SAMPLE[@]}; do
    if [ ! -d $i ]; then mkdir $i; fi
    if [ ! -e $i/transcripts.gtf ]; then
@@ -23,6 +24,7 @@ for i in ${SAMPLE[@]}; do
                 --GTF-guide $ANNOTATION \
                 --multi-read-correct \
                 --library-type fr-firststrand \
+                --frag-len-mean 310 \
                 --max-intron-length 15000 \
                 --min-intron-length 10 \
                 $BAMDIR/$i/accepted_hits.bam 1> $i/cufflinks.log 2> $i/cufflinks.err
