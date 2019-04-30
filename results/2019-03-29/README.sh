@@ -28,16 +28,15 @@ SAMPLE=( 1A_S8 1C_S1  2A_S7 2C_S5 3A_S9 3C_S11
 
 if [ ! -e z1.gtf ]; then
    cp $MERGED z1.gtf
+   for exon in $(gawk '($7=="."){print $1 "\\t" $2 "\\t" $3 "\\t" $4 "\\t" $5 "\\t"}' z1.gtf); do
+      STRAND=$(find ../2019-03-21 -name transcripts.gtf -exec grep -P $exon '{}' \; | \
+      gawk '{F[$7]++}END{for (f in F) print f "\t" F[f]}' | \
+      sort -nrk 2,2 | head -n 1 | cut -f 1)
+      echo $exon
+      echo $STRAND
+      sed -i -r "s/($exon[^\t]+\t)\.(\t.+)/\1\\$STRAND\2/" z1.gtf
+   done
 fi
-
-for exon in $(gawk '($7=="."){print $1 "\\t" $2 "\\t" $3 "\\t" $4 "\\t" $5 "\\t"}' z1.gtf); do
-   STRAND=$(find ../2019-03-21 -name transcripts.gtf -exec grep -P $exon '{}' \; | \
-   gawk '{F[$7]++}END{for (f in F) print f "\t" F[f]}' | \
-   sort -nrk 2,2 | head -n 1 | cut -f 1)
-   echo $exon
-   echo $STRAND
-   sed -i -r "s/($exon[^\t]+\t)\.(\t.+)/\1\\$STRAND\2/" z1.gtf
-done
 
 if [ ! -d rsem-out ]; then mkdir rsem-out; fi
 
@@ -67,6 +66,7 @@ fi
 # Thus, it is not valid, and I need to let RSEM do the mapping.
 
 for i in ${SAMPLE[@]}; do
+   if [ ! -d $i ]; then mkdir $i; fi
    if [ ! -e $i/$i.isoforms.results ]; then
       rsem-calculate-expression --strandedness reverse \
                                 --num-threads 4 \
@@ -74,7 +74,7 @@ for i in ${SAMPLE[@]}; do
                                 --calc-pme \
                                 --calc-ci \
                                 --no-bam-output \
-                                --fragment-length-mean 200.0 \
+                                --fragment-length-mean 310.0 \
                                 --fragment-length-sd 80.0 \
                                 $FASTQDIR/$i.trim.fastq.gz \
                                 rsem-out/merged \
