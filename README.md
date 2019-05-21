@@ -24,8 +24,12 @@ conda create --name Brachionus --file spec-file.txt
 
 ---------------------------------------------------------------------------------------------------
 
+# 2019-04-03
+I use the package edgeR to identify genes differentially expressed between selective regimes and
+hatching conditions.
+
 # 2019-03-29
-I want to quantify the expression using an alternative method. Here I use RSEM to obtain raw counts
+I quantify the expression using an alternative method. Here I use RSEM to obtain raw counts
 of reads mapped to transcripts. This is the kind of input used by edgeR or DSeq2.
 
 # 2019-03-21

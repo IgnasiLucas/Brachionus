@@ -19,25 +19,6 @@
 #  |     6C_S10      |      6A_S3       |     4C_S12      |      4A_S6       |
 #  +-----------------+------------------+-----------------+------------------+
 #
-# To put it another way:
-#
-#  +--------+------------------+------------------+
-#  | Sample | Selective regime | Forced diapause? |
-#  +--------+------------------+------------------+
-#  | 1A_S8  | Unpredictable    | No               |
-#  | 1C_S1  | Unpredictable    | Yes              |
-#  | 2A_S7  | Unpredictable    | No               |
-#  | 2C_S5  | Unpredictable    | Yes              |
-#  | 3A_S9  | Predictable      | No               |
-#  | 3C_S11 | Predictable      | Yes              |
-#  | 4A_S6  | Unpredictable    | No               |
-#  | 4C_S12 | Unpredictable    | Yes              |
-#  | 5A_S2  | Predictable      | No               |
-#  | 5C_S4  | Predictable      | Yes              |
-#  | 6A_S3  | Predictable      | No               |
-#  | 6C_S10 | Predictable      | Yes              |
-#  +--------+------------------+------------------+
-#
 # Note that samples are paired between diapause treatments. After the selection
 # experiment, "diapausing eggs obtained for each laboratory population were divided
 # into two groups to be subjected to two different diapause conditions: (1) non-forced
@@ -46,37 +27,37 @@
 # average level of expression among samples forced to hatch with the average level
 # among samples forced to diapause.
 #
-# So, I guess, the rigth description of the data includes an additional column:
+# One way to model gene expression in these samples is
+# described in section 3.5 of the edgeR manual. Since the effect of the population
+# only matters within a selective regime, we can nest it, and re-use the labels
+# for the populations. Below, I order the populations in a more natural way:
 #
-#  +--------+------------------+------------------+-------+
-#  | Sample | Selective regime | Forced diapause? | Block |
-#  +--------+------------------+------------------+-------+
-#  | 1A_S8  | Unpredictable    | No               |   1   |
-#  | 1C_S1  | Unpredictable    | Yes              |   1   |
-#  | 2A_S7  | Unpredictable    | No               |   2   |
-#  | 2C_S5  | Unpredictable    | Yes              |   2   |
-#  | 3A_S9  | Predictable      | No               |   3   |
-#  | 3C_S11 | Predictable      | Yes              |   3   |
-#  | 4A_S6  | Unpredictable    | No               |   4   |
-#  | 4C_S12 | Unpredictable    | Yes              |   4   |
-#  | 5A_S2  | Predictable      | No               |   5   |
-#  | 5C_S4  | Predictable      | Yes              |   5   |
-#  | 6A_S3  | Predictable      | No               |   6   |
-#  | 6C_S10 | Predictable      | Yes              |   6   |
-#  +--------+------------------+------------------+-------+
+#  +------------------+------------+----------+-----------+
+#  | Selective regime | Population | Hatching | Sample Id |
+#  +------------------+------------+----------+-----------+
+#  |      Random      |      1     | hatching |   1A_S8   |
+#  |      Random      |      1     | diapause |   1C_S1   |
+#  |      Random      |      2     | hatching |   2A_S7   |
+#  |      Random      |      2     | diapause |   2C_S5   |
+#  |      Random      |      3     | hatching |   4A_S6   |
+#  |      Random      |      3     | diapause |   4C_S12  |
+#  |     Periodic     |      1     | hatching |   3A_S9   |
+#  |     Periodic     |      1     | diapause |   3C_S11  |
+#  |     Periodic     |      2     | hatching |   5A_S2   |
+#  |     Periodic     |      2     | diapause |   5C_S4   |
+#  |     Periodic     |      3     | hatching |   6A_S3   |
+#  |     Periodic     |      3     | diapause |   6C_S10  |
+#  +------------------+------------+----------+-----------+
 #
-# The problem then is that the design matrix does not have full rank. Not all
-# coefficients can be estimated, because of dependence among factors. This happens
-# because the selective regime is redundant with the blocks or populations. One
-# way to deal with this is to remove the selective regime from the design matrix,
-# and use only diapause condition and population, additively. We are definitely
-# not interested in the interaction between diapause condition and population.
-# With such a design, we can still test for the (additive) effect of selective
-# regime.
+# A model such as this:
 #
-# However, we would miss the chance to examine the interaction between selective
-# regime and diapause. For that, we need to use a different design matrix, with
-# only selective regime and diapause condition.
+#       ~regime + regime:population + hatching
+#
+# would estimate the orthogonal effects of regime and hatching, but not their
+# interaction. Maybe I should first test for the significance of the interaction.
+# Well, because the same model must be fitted to every gene, the way to decide
+# what model is better is to look at the number of genes with a significant interaction
+# term, I guess.
 
 GENE_COUNTS=../2019-03-29/genes.PostCount.txt
 ISOFORM_COUNTS=../2019-03-29/isoforms.PostCount.txt
