@@ -30,12 +30,16 @@ I prefer the immediate hatching (instead of forced diapause) and the regular or
 periodic selective regime as the reference levels of the corresponding factors.
 
 ```{r}
-population  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
-diapause <- factor(rep(c("hatch","diapause"), 6))
-diapause <- relevel(diapause, "hatch")
-regime <- factor(c("random","random","random","random","regular","regular",
+population <- factor(c("1","1","2","2","3","3","4","4","5","5","6","6"))
+NestedPop  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
+diapause   <- factor(rep(c("hatch","diapause"), 6))
+diapause   <- relevel(diapause, "hatch")
+regime     <- factor(c("random","random","random","random","regular","regular",
                  "random","random","regular","regular","regular","regular"))
-regime <- relevel(regime, "regular")
+regime     <- relevel(regime, "regular")
+combined   <- factor(c("RandHatch","RandDiap","RandHatch","RandDiap","RegulHatch","RegulDiap",
+                      "RandHatch","RandDiap","RegulHatch","RegulDiap","RegulHatch","RegulDiap"))
+combined   <- relevel(combined, "RegulHatch")
 
 y <- DGEList(counts=counts, group=regime)
 y <- calcNormFactors(y, method="TMM")
@@ -86,59 +90,424 @@ on the right). The second dimension is also meaningful, since it almost separate
 the main exception.
 
 ```{r fig.width=9, fig.height=12}
-layout(mat=matrix(c(1,2,3,4,5,6,7,8,9,10,11,12), nrow=4, ncol=3), width=c(1,1,1), height=c(1,1,1,1))
+layout(mat=matrix(c(1,2,3,4,5,6,7,8,9,10,11,12), nrow=4, ncol=3, byrow=TRUE), width=c(1,1,1), height=c(1,1,1,1))
 for (i in 1:12) {
    plotMD(cpm(y, log=TRUE), column=i)
 }
 layout(mat=matrix(c(1), ncol=1, nrow=1))
 ```
-A lot of genes seem to be differentially expressed.
+A lot of genes seem to be differentially expressed. The total number of tags passing the filters is
+`r dim(y)[1]`. Let's define a variable to store this value:
+
+```{r}
+NumOfTags <- dim(y)[1]
+```
 
 #  Estimating the Biological Coefficient of Variation
 
-```{r}
-design1 <- model.matrix(~regime + diapause + regime:population)
-design2 <- model.matrix(~regime + diapause + regime:population + regime:diapause)
+I need different models:
+
+* *Model 1.* To test for an effect of the hatching condition, the most
+powerful model may be this: `~population + diapause`. That is to treet samples as paired
+by population. By using population, I account for variation due to selective regime.
+* *Model 2.* Another simple model would ignore the blocking effect of the population
+and the interaction between the two main factors: `~regime + diapause`.
+* *Model 3.* If there are reasons to ignore the effect of population and the interaction
+between selective regime and hatching condition, I would combine both factors in one with
+four levels, following section 3.3.1 in the edgeR manual: `~0 + combined`.
+* *Model 4.* Just to check for a batch effect of the population: `~regime + diapause + regime:NestedPop`.
+* *Model 5.* For the sake of comparison: `~regime + diapause + regime:diapause`.
+* *Model 6.* And for the sake of completeness: `~regime + diapause + regime:diapause + regime:NestedPop`.
+
+```{r fig.width=9, fig.height=6}
+design1 <- model.matrix(~population + diapause)
+design2 <- model.matrix(~regime + diapause)
+design3 <- model.matrix(~0 + combined)
+design4 <- model.matrix(~regime + diapause + regime:NestedPop)
+design5 <- model.matrix(~regime + diapause + regime:diapause)
+design6 <- model.matrix(~regime + diapause + regime:diapause + regime:NestedPop)
 
 y1 <- estimateDisp(y, design1)
 y2 <- estimateDisp(y, design2)
+y3 <- estimateDisp(y, design3)
+y4 <- estimateDisp(y, design4)
+y5 <- estimateDisp(y, design5)
+y6 <- estimateDisp(y, design6)
 
-plotBCV(y1)
-plotBCV(y2)
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+plotBCV(y1, main='Model 1')
+plotBCV(y2, main='Model 2')
+plotBCV(y3, main='Model 3')
+plotBCV(y4, main='Model 4')
+plotBCV(y5, main='Model 5')
+plotBCV(y6, main='Model 6')
 ```
 
 # Fitting the models
 
-```{r}
+```{r fig.width=9, fig.height=6}
 fit1 <- glmQLFit(y1, design1)
 fit2 <- glmQLFit(y2, design2)
+fit3 <- glmQLFit(y3, design3)
+fit4 <- glmQLFit(y4, design4)
+fit5 <- glmQLFit(y5, design5)
+fit6 <- glmQLFit(y6, design6)
 
-plotQLDisp(fit1)
-plotQLDisp(fit2)
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+plotQLDisp(fit1, main='Model 1')
+plotQLDisp(fit2, main='Model 2')
+plotQLDisp(fit3, main='Model 3')
+plotQLDisp(fit4, main='Model 4')
+plotQLDisp(fit5, main='Model 5')
+plotQLDisp(fit6, main='Model 6')
+
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+gof(fit1, plot=TRUE, main='Model 1')
+gof(fit2, plot=TRUE, main='Model 2')
+gof(fit3, plot=TRUE, main='Model 3')
+gof(fit4, plot=TRUE, main='Model 4')
+gof(fit5, plot=TRUE, main='Model 5')
+gof(fit6, plot=TRUE, main='Model 6')
 ```
 
-#  Contrasts
-## Is the interaction term between selective regime and hatching condition necessary?
+# Genes affected by hatching condition
+## Model 1
+
+Model 1 is expected to be the most sensitive to detect genes the expression of which is
+affected by enforcing diapause, after accounting for the variation among populations (which
+includes variation due to selective regime).
 
 ```{r}
-qlf_2 <- glmQLFTest(fit2, coef=8)
-genes_with_interaction_term <- topTags(qlf_2, n=dim(y)[1])$table
-genes_with_interaction_term$logPValue <- -log10(genes_with_interaction_term$PValue)
-ggplot(data=genes_with_interaction_term, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
-   geom_point() + theme_grey(base_size=20) + ylab(expression(paste("-log"[10], plain("(p value)"))))
-
-NumGenes <- sum(genes_with_interaction_term$FDR <= 0.10)
-
-if (NumGenes > 2) {
-   fit <- fit2
-} else {
-   fit <- fit1
-}
+qlf1 <- glmQLFTest(fit1)
+topTags(qlf1)
+z1 <- topTags(qlf1, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 1')
 ```
 
-That is, if there were more than two genes with a significant interaction between the selective
-regime and the hatching condition (at FDR = 0.1), then I would keep the more complex model,
-including that interaction. Otherwise (which is actually the case), I keep working with the
-simpler model with no interaction. Note that in both models coefficients 2 and 3 are the random
-regime and the forced diapause effects.
- 
+I would say the two first genes (XLOC_052427 and XLOC_045087) are significantly downregulated
+when enforcing diapause, with respect to the immediate hatching condition.
+
+## Model 2
+
+Model 2 is very simple, and may include false positives, because it does not account for any
+interaction, nor for among-population variance.
+
+```{r}
+qlf2 <- glmQLFTest(fit2, coef=3)
+topTags(qlf2)
+z1 <- topTags(qlf2, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 2')
+```
+
+According to model 2, there are `r dim(topTags(qlf2, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition, at FDR=0.1.
+
+## Model 3
+
+In model 3, the effect of diapause may be understood in two different ways. First, we may want
+to know what genes have an average expression level different between hatching conditions. This
+is different from testing the effect of hatching condition twice: first among samples in a regular
+environment and then among those in the stochastic environment. Then, I could select the genes
+with the same significant tendency in both selective regimes. I will limit this analysis to the
+first option, comparing only average gene expression level.
+
+```{r}
+qlf3 <- glmQLFTest(fit3, contrast=c(-0.5, 0.5, -0.5, 0.5))
+topTags(qlf3)
+z1 <- topTags(qlf3, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 3')
+```
+
+According to model 3, there are `r dim(topTags(qlf3, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+## Model 4
+
+```{r}
+qlf4 <- glmQLFTest(fit4, coef=3)
+topTags(qlf4)
+z1 <- topTags(qlf4, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 4')
+```
+
+According to model 4, there are `r dim(topTags(qlf4, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+## Model 5
+
+```{r}
+qlf5 <- glmQLFTest(fit5, coef=3)
+topTags(qlf5)
+z1 <- topTags(qlf5, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 5')
+```
+
+According to model 5, there are `r dim(topTags(qlf5, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+## Model 6
+
+```{r}
+qlf6 <- glmQLFTest(fit6, coef=3)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 6')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.10. And this is how
+the results from models 2, 4, 5 and 6 match:
+
+```{r}
+significant <- cbind(model2 = topTags(qlf2, n=NumOfTags)$table$FDR <= 0.1, 
+                     model3 = topTags(qlf3, n=NumOfTags)$table$FDR <= 0.1,
+                     model4 = topTags(qlf4, n=NumOfTags)$table$FDR <= 0.1,
+                     model5 = topTags(qlf5, n=NumOfTags)$table$FDR <= 0.1,
+                     model6 = topTags(qlf6, n=NumOfTags)$table$FDR <= 0.1)
+vennDiagram(vennCounts(significant))
+```
+
+# Interaction between selective regime and hatching condition
+## Model 6
+
+```{r}
+qlf6 <- glmQLFTest(fit6, coef=4)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Interaction regime-hatching')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.25))[1]` tags
+with a significant interaction term between selective regime and hatching condition at
+FDR = 0.25.
+
+## Model 5
+
+```{r}
+qlf5 <- glmQLFTest(fit5, coef=4)
+topTags(qlf5)
+z1 <- topTags(qlf5, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) + 
+   ggtitle('Interaction regime-hatching in model 5')
+```
+
+According to model 5, there are `r dim(topTags(qlf5, n=NumOfTags, p.value=0.25))[1]` tags
+with a significant interaction term between selective regime and hatching condition at 
+FDR = 0.25. And this is how models 5 and 6 agree on what genes have such significant interaction
+term:
+
+```{r}
+significant <- cbind(model5 = topTags(qlf5, n=NumOfTags)$table$FDR <= 0.25,
+                     model6 = topTags(qlf6, n=NumOfTags)$table$FDR <= 0.25)
+vennDiagram(vennCounts(significant))
+```
+
+# Interaction between selective regime and population
+
+When testing for significant coefficients showing the effect of the nested population, there
+are not one but 4 possible coefficients, each with a different fold change. For the volcano
+plot, I want to use for each gene the fold change that is most extreme (either positive or
+negative).
+
+## Model 6
+
+```{r}
+qlf6  <- glmQLFTest(fit6, coef=5:8)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+z1$logFC <- z1[cbind(1:NumOfTags, apply(abs(z1[,1:4]), 1, which.max))]
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Interaction regime-population in complete model')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.01))[1]` tags
+with a significant interaction term between selective regime and population, at FDR = 0.01.
+
+## Model 4
+
+```{r}
+qlf4 <- glmQLFTest(fit4, coef=4:7)
+topTags(qlf4)
+z1 <- topTags(qlf4, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+z1$logFC <- z1[cbind(1:NumOfTags, apply(abs(z1[,1:4]), 1, which.max))]
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) + 
+   ggtitle('Interaction regime-population in model 4')
+```
+
+According to model 4, there are `r dim(topTags(qlf4, n=NumOfTags, p.value=0.01))[1]` tags
+with a significant interaction term between selective regimew and population, at FDR = 0.01.
+And this is how the genes identified as having such significant coefficients match between
+results of models 4 and 6:
+
+```{r}
+significant <- cbind(model4 = topTags(qlf4, n=NumOfTags)$table$FDR <= 0.01,
+                     model6 = topTags(qlf6, n=NumOfTags)$table$FDR <= 0.01)
+vennDiagram(vennCounts(significant))
+```
+
+# Main effect of the selective regime
+
+## Model 2
+
+```{r}
+qlf2  <- glmQLFTest(fit2, coef=2)
+topTags(qlf2)
+z1 <- topTags(qlf2, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Main effect of selective regime')
+```
+
+According to model 2, there are `r dim(topTags(qlf2,n=NumOfTags,p.value=0.01))[1]` tags
+significantly up- or downregulated by selective regime at FDR=0.01.
+
+## Model 3
+
+Using model 3 I can look for genes affected by selective regime in two ways. First, I could
+look for a significant change in average gene expression among samples in the same regime.
+Alternatively, I could separately look for genes affected by the selective regime among samples
+in the same hatching condition, and then compare the lists of significant genes. According to
+Edu, the latter makes more sense biologically, because we expect the selective regime to affect
+different sets of genes depending on whether eggs are allowed to hatch or *forced* to undergo
+diapause.
+
+### Effect of selective regime when eggs are allowed to hatch immediately
+
+```{r}
+qlf3a  <- glmQLFTest(fit3, contrast=c(-1, 0, 1, 0))
+topTags(qlf3a)
+z1 <- topTags(qlf3a, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Effect of selective regime, when hatching')
+```
+According to model 3, contrast *a*, there are `r dim(topTags(qlf3a, n=NumOfTags, p.value=0.05))[1]` tags
+differentially expressed between selective regimes among samples allowed to hatch immediately, at FDR=0.05.
+
+### Effect of selective regime when eggs are forced to undergo diapause
+
+```{r}
+qlf3b  <- glmQLFTest(fit3, contrast=c(0, 1, 0, -1))
+topTags(qlf3b)
+z1 <- topTags(qlf3b, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Effect of selective regime, when hatching')
+```
+
+According to model 3, contrast *b*, there are `r dim(topTags(qlf3b, n=NumOfTags, p.value=0.05))[1]` tags
+differentially expressed between selective regimes among samples undergoing diapause, at FDR=0.05. There is
+a reasonable correlation between the fold change in the two hatching conditions:
+
+```{r}
+z2 <- merge(topTags(qlf3a, n=NumOfTags)$table,
+            topTags(qlf3b, n=NumOfTags)$table,
+            by='row.names')
+ggplot(data=z2, mapping=aes(x=logFC.x, y=logFC.y, color=FDR.x)) +
+   geom_point() + geom_smooth(method='lm') + xlab('logFC hatching') + ylab('logFC diapause')
+```
+
+### Average effect of selective regime
+
+```{r}
+qlf3c  <- glmQLFTest(fit3, contrast=c(-0.5, 0.5, 0.5, -0.5))
+topTags(qlf3c)
+z1 <- topTags(qlf3c, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Effect of selective regime, when hatching')
+```
+
+According to model 3, contrast *c*, there are `r dim(topTags(qlf3b, n=NumOfTags, p.value=0.05))[1]` tags
+with a significant change (across selective regimes) of average (across hatching conditions) expression
+levels, at FDR = 0.05. 
+
+## Model 4
+
+```{r}
+qlf4  <- glmQLFTest(fit4, coef=2)
+topTags(qlf4)
+z1 <- topTags(qlf4, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Main effect of selective regime, model 4')
+```
+
+According to model 4, there are `r dim(topTags(qlf4,n=NumOfTags,p.value=0.25))[1]` tags
+significantly up- or downregulated by selective regime at FDR=0.25.
+
+## Model 5
+
+```{r}
+qlf5  <- glmQLFTest(fit5, coef=2)
+topTags(qlf5)
+z1 <- topTags(qlf5, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Main effect of selective regime, model 5')
+```
+
+According to model 5, there are `r dim(topTags(qlf5,n=NumOfTags,p.value=0.05))[1]` tags
+significantly up- or downregulated by selective regime at FDR=0.25.
+
+## Model 6
+
+```{r}
+qlf6  <- glmQLFTest(fit6, coef=2)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Main effect of selective regime, model 6')
+```
+
+According to model 6, there are `r dim(topTags(qlf6,n=NumOfTags,p.value=0.25))[1]` tags
+significantly up- or downregulated by selective regime at FDR=0.25. And this is how the
+different models agree on what genes are differentially expressed in different selective
+regimes:
+
+```{r}
+significant <- cbind(model2 = topTags(qlf2,  n=NumOfTags)$table$FDR <= 0.01,
+                     model3 = topTags(qlf3a, n=NumOfTags)$table$FDR <= 0.05,
+                     model4 = topTags(qlf4,  n=NumOfTags)$table$FDR <= 0.25,
+                     model5 = topTags(qlf5,  n=NumOfTags)$table$FDR <= 0.05,
+                     model6 = topTags(qlf6,  n=NumOfTags)$table$FDR <= 0.25)
+vennDiagram(vennCounts(significant))
+```
+
+Note that I am using a different FDR for each model, to obtain more or less comparable
+and positive numbers.

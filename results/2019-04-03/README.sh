@@ -65,12 +65,13 @@ ISOFORM_COUNTS=../2019-03-29/isoforms.PostCount.txt
 
 if [ ! -d genes ]; then mkdir genes; fi
 if [ ! -e genes/report.html ]; then
-   #Rscript --no-save RunEdgeR.R $GENE_COUNTS genes
-   R -e "rmarkdown::render('RunEdgeR.Rmd', output_file='genes/report.html')" --args $GENE_COUNTS genes
+   R --save -e "rmarkdown::render('RunEdgeR.Rmd', output_file='genes/report.html')" --args $GENE_COUNTS genes
+   mv .RData genes/
 fi
 
 if [ ! -d isoforms ]; then mkdir isoforms; fi
 if [ ! -e isoforms/report.html ]; then
    #Rscript --no-save RunEdgeR.R $ISOFORM_COUNTS isoforms
-   R -e "rmarkdown::render('RunEdgeR.Rmd', output_file='isoforms/report.html')" --args $ISOFORM_COUNTS isoforms
+   R --save -e "rmarkdown::render('RunEdgeR.Rmd', output_file='isoforms/report.html')" --args $ISOFORM_COUNTS isoforms
+   mv .RData isoforms/
 fi
