@@ -26,7 +26,7 @@ counts <- read.table(input_file_name, row.names=1, header=TRUE)
 ```
 
 Three factors: population, diapause or hatching condition, and selective regime.
-I prefer the immediate hatching (instead of forced diapause) and the regular or
+I set the "immediate hatching" (instead of "forced diapause") and the "regular" or
 periodic selective regime as the reference levels of the corresponding factors.
 
 ```{r}
@@ -46,6 +46,7 @@ y <- calcNormFactors(y, method="TMM")
 
 barplot(y$samples$lib.size*1e-6, names=1:12, ylab="Library size (millions)")
 ```
+
 It looks like the populations undergoing diapause systematically produced smaller
 libraries. It may be the effect of a smaller amount of eggs available. Population 5
 is the exception.
@@ -169,6 +170,8 @@ gof(fit4, plot=TRUE, main='Model 4')
 gof(fit5, plot=TRUE, main='Model 5')
 gof(fit6, plot=TRUE, main='Model 6')
 ```
+
+
 
 # Genes affected by hatching condition
 ## Model 1
