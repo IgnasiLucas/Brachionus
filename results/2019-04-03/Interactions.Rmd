@@ -1,0 +1,213 @@
+---
+title: "Testing the interactions terms in the models of gene expression"
+output: html_document
+author: "J. Ignacio Lucas Lledó"
+---
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+library(edgeR)
+library(ggplot2)
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 0) {
+   stop("At least one argument must be supplied: input file.", call.=FALSE)
+} else if (length(args) == 1) {
+   args[2] <- "."
+}
+
+input_file_name <- args[1]
+output_dir <- args[2]
+
+population <- factor(c("1","1","2","2","3","3","4","4","5","5","6","6"))
+NestedPop  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
+diapause   <- factor(rep(c("hatch","diapause"), 6))
+diapause   <- relevel(diapause, "hatch")
+regime     <- factor(c("random","random","random","random","regular","regular",
+                 "random","random","regular","regular","regular","regular"))
+regime     <- relevel(regime, "regular")
+combined   <- factor(c("RandHatch","RandDiap","RandHatch","RandDiap","RegulHatch","RegulDiap",
+                      "RandHatch","RandDiap","RegulHatch","RegulDiap","RegulHatch","RegulDiap"))
+combined   <- relevel(combined, "RegulHatch")
+
+if (!exists('y')) {
+   if (!exists('counts')) {
+      counts <- read.table(input_file_name, row.names=1, header=TRUE)
+   }
+   y <- DGEList(counts=counts, group=regime)
+   y <- calcNormFactors(y, method="TMM")
+   threshold <- 5.0 / (min(y$samples$lib.size) / 1000000)
+   keep <- rowSums(cpm(y) > threshold) >= 4
+   y <- y[keep, ,keep.lib.sizes=FALSE]
+}
+
+NumOfTags <- dim(y)[1]
+
+if (!exists('fit1')) {
+   design1 <- model.matrix(~population + diapause)
+   if (!exists('y1')) {
+      y1 <- estimateDisp(y, design1)
+   }
+   fit1 <- glmQLFit(y1, design1)
+}
+
+if (!exists('fit2')) {
+   design2 <- model.matrix(~regime + diapause)
+   if (!exists('y2')) {
+      y2 <- estimateDisp(y, design2)
+   }
+   fit2 <- glmQLFit(y2, design2)   
+}
+
+if (!exists('fit3')) {
+   design3 <- model.matrix(~0 + combined)
+   if (!exists('y3')) {
+      y3 <- estimateDisp(y, design3)
+   }
+   fit3 <- glmQLFit(y3, design3)
+}
+
+if (!exists('fit4')) {
+   design4 <- model.matrix(~regime + diapause + regime:NestedPop)
+   if (!exists('y4')) {
+      y4 <- estimateDisp(y, design4)
+   }
+   fit4 <- glmQLFit(y4, design4)
+}
+
+if (!exists('fit5')) {
+   design5 <- model.matrix(~regime + diapause + regime:diapause)
+   if (!exists('y5')) {
+      y5 <- estimateDisp(y, design5)
+   }
+   fit5 <- glmQLFit(y5, design5)
+}
+
+if (!exists('fit6')) {
+   design6 <- model.matrix(~regime + diapause + regime:diapause + regime:NestedPop)
+   if (!exists('y6')) {
+      y6 <- estimateDisp(y, design6)
+   }
+   fit6 <- glmQLFit(y6, design6)
+}
+
+if (!exists('I1vsI2')) {
+   I1vsI2 <- read.table("../2017-10-27/list_genes/I1vsI2_all.txt", 
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('P1vsP2')) {
+   P1vsP2 <- read.table("../2017-10-27/list_genes/P1vsP2_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('I1vsP1')) {
+   I1vsP1 <- read.table("../2017-10-27/list_genes/I1vsP1_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('I2vsP2')) {
+   I2vsP2 <- read.table("../2017-10-27/list_genes/I2vsP2_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('Cuffdiff_hatching')) {
+   Cuffdiff_hatching <- I1vsI2$geneid[I1vsI2$geneid %in% P1vsP2$geneid]
+}
+
+if (!exists('Cuffdiff_regime')) {
+   Cuffdiff_regime   <- I1vsP1$geneid[I1vsP1$geneid %in% I2vsP2$geneid]
+}
+```
+# Interaction between selective regime and hatching condition
+## Model 6
+
+```{r}
+qlf6 <- glmQLFTest(fit6, coef=4)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Interaction regime-hatching')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.25))[1]` tags
+with a significant interaction term between selective regime and hatching condition at
+FDR = 0.25.
+
+## Model 5
+
+```{r}
+qlf5 <- glmQLFTest(fit5, coef=4)
+topTags(qlf5)
+z1 <- topTags(qlf5, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) + 
+   ggtitle('Interaction regime-hatching in model 5')
+```
+
+According to model 5, there are `r dim(topTags(qlf5, n=NumOfTags, p.value=0.25))[1]` tags
+with a significant interaction term between selective regime and hatching condition at 
+FDR = 0.25. And this is how models 5 and 6 agree on what genes have such significant interaction
+term:
+
+```{r}
+significant <- cbind(model5 = topTags(qlf5, n=NumOfTags, sort.by='none')$table$FDR <= 0.25,
+                     model6 = topTags(qlf6, n=NumOfTags, sort.by='none')$table$FDR <= 0.25)
+vennDiagram(vennCounts(significant))
+```
+
+# Interaction between selective regime and population
+
+When testing for significant coefficients showing the effect of the nested population, there
+are not one but 4 possible coefficients, each with a different fold change. For the volcano
+plot, I want to use for each gene the fold change that is most extreme (either positive or
+negative).
+
+## Model 6
+
+```{r}
+qlf6  <- glmQLFTest(fit6, coef=5:8)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+z1$logFC <- z1[cbind(1:NumOfTags, apply(abs(z1[,1:4]), 1, which.max))]
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) +
+   ggtitle('Interaction regime-population in complete model')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.01))[1]` tags
+with a significant interaction term between selective regime and population, at FDR = 0.01.
+
+## Model 4
+
+```{r}
+qlf4 <- glmQLFTest(fit4, coef=4:7)
+topTags(qlf4)
+z1 <- topTags(qlf4, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+z1$logFC <- z1[cbind(1:NumOfTags, apply(abs(z1[,1:4]), 1, which.max))]
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("p value)")))) + 
+   ggtitle('Interaction regime-population in model 4')
+```
+
+According to model 4, there are `r dim(topTags(qlf4, n=NumOfTags, p.value=0.01))[1]` tags
+with a significant interaction term between selective regimew and population, at FDR = 0.01.
+And this is how the genes identified as having such significant coefficients match between
+results of models 4 and 6:
+
+```{r}
+significant <- cbind(model4 = topTags(qlf4, n=NumOfTags, sort.by='none')$table$FDR <= 0.01,
+                     model6 = topTags(qlf6, n=NumOfTags, sort.by='none')$table$FDR <= 0.01)
+vennDiagram(vennCounts(significant))
+```

@@ -1,0 +1,279 @@
+---
+title: "Effect of hatching condition on gene expression"
+output: html_document
+author: "J. Ignacio Lucas Lledó"
+---
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+library(edgeR)
+library(ggplot2)
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 0) {
+   stop("At least one argument must be supplied: input file.", call.=FALSE)
+} else if (length(args) == 1) {
+   args[2] <- "."
+}
+
+input_file_name <- args[1]
+output_dir <- args[2]
+
+population <- factor(c("1","1","2","2","3","3","4","4","5","5","6","6"))
+NestedPop  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
+diapause   <- factor(rep(c("hatch","diapause"), 6))
+diapause   <- relevel(diapause, "hatch")
+regime     <- factor(c("random","random","random","random","regular","regular",
+                 "random","random","regular","regular","regular","regular"))
+regime     <- relevel(regime, "regular")
+combined   <- factor(c("RandHatch","RandDiap","RandHatch","RandDiap","RegulHatch","RegulDiap",
+                      "RandHatch","RandDiap","RegulHatch","RegulDiap","RegulHatch","RegulDiap"))
+combined   <- relevel(combined, "RegulHatch")
+
+if (!exists('y')) {
+   if (!exists('counts')) {
+      counts <- read.table(input_file_name, row.names=1, header=TRUE)
+   }
+   y <- DGEList(counts=counts, group=regime)
+   y <- calcNormFactors(y, method="TMM")
+   threshold <- 5.0 / (min(y$samples$lib.size) / 1000000)
+   keep <- rowSums(cpm(y) > threshold) >= 4
+   y <- y[keep, ,keep.lib.sizes=FALSE]
+}
+
+NumOfTags <- dim(y)[1]
+
+if (!exists('fit1')) {
+   design1 <- model.matrix(~population + diapause)
+   if (!exists('y1')) {
+      y1 <- estimateDisp(y, design1)
+   }
+   fit1 <- glmQLFit(y1, design1)
+}
+
+if (!exists('fit2')) {
+   design2 <- model.matrix(~regime + diapause)
+   if (!exists('y2')) {
+      y2 <- estimateDisp(y, design2)
+   }
+   fit2 <- glmQLFit(y2, design2)   
+}
+
+if (!exists('fit3')) {
+   design3 <- model.matrix(~0 + combined)
+   if (!exists('y3')) {
+      y3 <- estimateDisp(y, design3)
+   }
+   fit3 <- glmQLFit(y3, design3)
+}
+
+if (!exists('fit4')) {
+   design4 <- model.matrix(~regime + diapause + regime:NestedPop)
+   if (!exists('y4')) {
+      y4 <- estimateDisp(y, design4)
+   }
+   fit4 <- glmQLFit(y4, design4)
+}
+
+if (!exists('fit5')) {
+   design5 <- model.matrix(~regime + diapause + regime:diapause)
+   if (!exists('y5')) {
+      y5 <- estimateDisp(y, design5)
+   }
+   fit5 <- glmQLFit(y5, design5)
+}
+
+if (!exists('fit6')) {
+   design6 <- model.matrix(~regime + diapause + regime:diapause + regime:NestedPop)
+   if (!exists('y6')) {
+      y6 <- estimateDisp(y, design6)
+   }
+   fit6 <- glmQLFit(y6, design6)
+}
+
+if (!exists('I1vsI2')) {
+   I1vsI2 <- read.table("../2017-10-27/list_genes/I1vsI2_all.txt", 
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('P1vsP2')) {
+   P1vsP2 <- read.table("../2017-10-27/list_genes/P1vsP2_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('I1vsP1')) {
+   I1vsP1 <- read.table("../2017-10-27/list_genes/I1vsP1_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('I2vsP2')) {
+   I2vsP2 <- read.table("../2017-10-27/list_genes/I2vsP2_all.txt",
+      colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+      col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+      "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+}
+
+if (!exists('Cuffdiff_hatching')) {
+   Cuffdiff_hatching <- I1vsI2$geneid[I1vsI2$geneid %in% P1vsP2$geneid]
+}
+
+if (!exists('Cuffdiff_regime')) {
+   Cuffdiff_regime   <- I1vsP1$geneid[I1vsP1$geneid %in% I2vsP2$geneid]
+}
+```
+# Model 1
+
+Model 1 is expected to be the most sensitive to detect genes the expression of which is
+affected by enforcing diapause, after accounting for the variation among populations (which
+includes variation due to selective regime).
+
+```{r}
+qlf1 <- glmQLFTest(fit1)
+topTags(qlf1)
+z1 <- topTags(qlf1, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 1')
+```
+
+I would say the two first genes (XLOC_052427 and XLOC_045087) are significantly downregulated
+when enforcing diapause, with respect to the immediate hatching condition.
+
+# Model 2
+
+Model 2 is very simple, and may include false positives, because it does not account for any
+interaction, nor for among-population variance.
+
+```{r}
+qlf2 <- glmQLFTest(fit2, coef=3)
+topTags(qlf2)
+z1 <- topTags(qlf2, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 2')
+```
+
+According to model 2, there are `r dim(topTags(qlf2, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition, at FDR=0.1.
+
+# Model 3
+
+In model 3, the effect of diapause may be understood in two different ways. First, we may want
+to know what genes have an average expression level different between hatching conditions. This
+is different from testing the effect of hatching condition twice: first among samples in a regular
+environment and then among those in the stochastic environment. Then, I could select the genes
+with the same significant tendency in both selective regimes. I will start this analysis to the
+first option, comparing only average gene expression level.
+
+```{r}
+qlf3 <- glmQLFTest(fit3, contrast=c(-0.5, 0.5, -0.5, 0.5))
+topTags(qlf3)
+z1 <- topTags(qlf3, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 3')
+```
+
+According to model 3, there are `r dim(topTags(qlf3, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+For the sake of comparing model 3 to the results from Cuffdiff, I will make each one of the
+four possible comparisons. The four coefficients of model correspond, in this order, to:
+regular regime and immediate hatching, random regime and diapause, random regime and hatching,
+and regular regime and diapause. In Eva's terms, I believe they correspond to P1, I2, I1, and
+P2.
+
+```{r fig.width=6, fig.height=6}
+#                                     P1 I2 I1 P2
+qlf3_1 <- glmQLFTest(fit3, contrast=c( 0,-1, 1, 0)) # I1vsI2
+qlf3_2 <- glmQLFTest(fit3, contrast=c( 1, 0, 0,-1)) # P1vsP2
+qlf3_3 <- glmQLFTest(fit3, contrast=c(-1, 0, 1, 0)) # I1vsP1
+qlf3_4 <- glmQLFTest(fit3, contrast=c( 0, 1, 0,-1)) # I2vsP2
+
+z1 <- topTags(qlf3_1, n=NumOfTags)$table
+z2 <- topTags(qlf3_2, n=NumOfTags)$table
+z3 <- topTags(qlf3_3, n=NumOfTags)$table
+z4 <- topTags(qlf3_4, n=NumOfTags)$table
+
+z1$inCuffdiff <- row.names(z1) %in% I1vsI2$geneid
+z2$inCuffdiff <- row.names(z2) %in% P1vsP2$geneid
+z3$inCuffdiff <- row.names(z3) %in% I1vsP1$geneid
+z4$inCuffdiff <- row.names(z4) %in% I2vsP2$geneid
+
+layout(mat=matrix(c(1,2,3,4), ncol=2, nrow=2, byrow=TRUE))
+qqplot(z1$PValue[z1$inCuffdiff], z1$PValue[!z1$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Random')
+qqplot(z2$PValue[z2$inCuffdiff], z2$PValue[!z2$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Regular')
+qqplot(z3$PValue[z3$inCuffdiff], z3$PValue[!z3$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when hatching')
+qqplot(z4$PValue[z4$inCuffdiff], z4$PValue[!z4$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when diapausing')
+```
+
+The graphs above compare the distribution of p-values of genes called differentially regulated by
+Cuffdiff with the distribution of p-values among the rest of genes. It can be seen that in all
+comparisons, the genes detected as differentially expressed by Cuffdiff are not assigned lower
+p-values by EdgeR in the same comparisons. Rather, they look random samples of genes with respect
+to their p-values. 
+
+# Model 4
+
+```{r}
+qlf4 <- glmQLFTest(fit4, coef=3)
+topTags(qlf4)
+z1 <- topTags(qlf4, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 4')
+```
+
+According to model 4, there are `r dim(topTags(qlf4, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+# Model 5
+
+```{r}
+qlf5 <- glmQLFTest(fit5, coef=3)
+topTags(qlf5)
+z1 <- topTags(qlf5, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 5')
+```
+
+According to model 5, there are `r dim(topTags(qlf5, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.1.
+
+# Model 6
+
+```{r}
+qlf6 <- glmQLFTest(fit6, coef=3)
+topTags(qlf6)
+z1 <- topTags(qlf6, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Effect of enforcing diapause, model 6')
+```
+
+According to model 6, there are `r dim(topTags(qlf6, n=NumOfTags, p.value=0.10))[1]` tags
+significantly up- or downregulated by hatching condition at FDR = 0.10. And this is how
+the results from models 1, 2, 3 and 4 match:
+
+```{r}
+significant <- cbind(model1 = topTags(qlf1, n=NumOfTags, sort.by='none')$table$FDR <= 0.4, 
+                     model2 = topTags(qlf2, n=NumOfTags, sort.by='none')$table$FDR <= 0.4,
+                     model3 = topTags(qlf3, n=NumOfTags, sort.by='none')$table$FDR <= 0.4,
+                     model4 = topTags(qlf4, n=NumOfTags, sort.by='none')$table$FDR <= 0.4)
+vennDiagram(vennCounts(significant), main='FDR=0.4')
+```
+
+The genes detected at FDR < 0.4 by models 1, 2 are
+`r row.names(topTags(qlf1,p.value=0.4))[row.names(topTags(qlf1,p.value=0.4)) %in% row.names(topTags(qlf2,p.value=0.4))]`
+. No need for a functional enrichment analysis. 

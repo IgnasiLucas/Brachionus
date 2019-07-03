@@ -1,0 +1,214 @@
+---
+title: "Preliminar anlysis of gene expression data from Brachionus plicatilis"
+output: html_document
+author: "J. Ignacio Lucas Lledó"
+---
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+library(edgeR)
+library(ggplot2)
+```
+# Reading the data
+
+The data for this analysis was created in folder 2019-03-29. 
+
+```{r eval=TRUE, echo=TRUE, include=TRUE}
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 0) {
+   stop("At least one argument must be supplied: input file.", call.=FALSE)
+} else if (length(args) == 1) {
+   args[2] <- "."
+}
+
+input_file_name <- args[1]
+output_dir <- args[2]
+counts <- read.table(input_file_name, row.names=1, header=TRUE)
+names(counts)
+```
+
+Three factors: population, diapause or hatching condition, and selective regime.
+I set the "immediate hatching" (instead of "forced diapause") and the "regular" or
+periodic selective regime as the reference levels of the corresponding factors.
+
+```{r}
+population <- factor(c("1","1","2","2","3","3","4","4","5","5","6","6"))
+NestedPop  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
+diapause   <- factor(rep(c("hatch","diapause"), 6))
+diapause   <- relevel(diapause, "hatch")
+regime     <- factor(c("random","random","random","random","regular","regular",
+                 "random","random","regular","regular","regular","regular"))
+regime     <- relevel(regime, "regular")
+combined   <- factor(c("RandHatch","RandDiap","RandHatch","RandDiap","RegulHatch","RegulDiap",
+                      "RandHatch","RandDiap","RegulHatch","RegulDiap","RegulHatch","RegulDiap"))
+combined   <- relevel(combined, "RegulHatch")
+
+y <- DGEList(counts=counts, group=regime)
+y <- calcNormFactors(y, method="TMM")
+
+barplot(y$samples$lib.size*1e-6, names=1:12, ylab="Library size (millions)")
+```
+
+It looks like the populations undergoing diapause systematically produced smaller
+libraries. It may be the effect of a smaller amount of eggs available. Population 5
+is the exception.
+
+
+#  Filtering
+
+The recommended filtering consists on removing genes that have such a low expression
+level that do not have at least 5-10 counts on as many samples as groups there are. The
+rationale is that those genes cannot have enough reads in at least one sample of each
+group. However, instead of filtering on the raw counts, the edgeR manual suggests to
+translate whatever minimum number of reads per library in terms of counts per million.
+The reason is that the filtering should take into account differences in library sizes
+between samples. It probably makes sense, because otherwise, I would be applying an
+effectively higher (harsher) minimum threshold to the gene expression level in samples
+with smaller libraries. That would probably bias results, since we would be enriching
+the dataset in genes more highly expressed in some samples than in others.
+
+Say that library sizes range between 250000 and 2000000. Then, applying a minimum expression
+level of 20 counts per million is the only way to make sure that even the small libraries
+are required to contain at least 5 counts, while at the same time setting the cutoff at the
+same biologically relevant level. In any case, as long as the minimum expression
+level is not enforced in all samples, the dataset retained will contain genes that do not
+reach the minimum in some samples. Since counts per million are (expectedly and actually)
+similarly distributed among samples, it should not be the case that any sample is enriched
+in low-expression genes.
+
+```{r}
+threshold <- 5.0 / (min(y$samples$lib.size) / 1000000)
+keep <- rowSums(cpm(y) > threshold) >= 4
+y <- y[keep, ,keep.lib.sizes=FALSE]
+
+plotMDS(y$counts)
+```
+
+The magnitude of variation along the axes seems very high in comparison with the examples
+available in the EdgeR manual, suggesting wild gene expression differences. With the exception
+of sample X5A_S2, dimension 1 separates samples undergoing forced diapause (named with a "C",
+mostly on the left half of the plot) from those hatching right away (named with an "A", mostly
+on the right). The second dimension is also meaningful, since it almost separates populations
+1, 2, and 4, which underwent random regime, from 3, 5 and 6 (regular regime). Sample X2A_S7 is
+the main exception.
+
+```{r fig.width=9, fig.height=12}
+layout(mat=matrix(c(1,2,3,4,5,6,7,8,9,10,11,12), nrow=4, ncol=3, byrow=TRUE), width=c(1,1,1), height=c(1,1,1,1))
+for (i in 1:12) {
+   plotMD(cpm(y, log=TRUE), column=i)
+}
+layout(mat=matrix(c(1), ncol=1, nrow=1))
+```
+A lot of genes seem to be differentially expressed. The total number of tags passing the filters is
+`r dim(y)[1]`. Let's define a variable to store this value:
+
+```{r}
+NumOfTags <- dim(y)[1]
+```
+
+#  Estimating the Biological Coefficient of Variation
+
+I need different models:
+
+* *Model 1.* To test for an effect of the hatching condition, the most
+powerful model may be this: `~population + diapause`. That is to treet samples as paired
+by population. By using population, I account for variation due to selective regime.
+* *Model 2.* Another simple model would ignore the blocking effect of the population
+and the interaction between the two main factors: `~regime + diapause`.
+* *Model 3.* If there are reasons to ignore the effect of population and the interaction
+between selective regime and hatching condition, I would combine both factors in one with
+four levels, following section 3.3.1 in the edgeR manual: `~0 + combined`.
+* *Model 4.* Just to check for a batch effect of the population: `~regime + diapause + regime:NestedPop`.
+* *Model 5.* For the sake of comparison: `~regime + diapause + regime:diapause`.
+* *Model 6.* And for the sake of completeness: `~regime + diapause + regime:diapause + regime:NestedPop`.
+
+```{r fig.width=9, fig.height=6}
+design1 <- model.matrix(~population + diapause)
+design2 <- model.matrix(~regime + diapause)
+design3 <- model.matrix(~0 + combined)
+design4 <- model.matrix(~regime + diapause + regime:NestedPop)
+design5 <- model.matrix(~regime + diapause + regime:diapause)
+design6 <- model.matrix(~regime + diapause + regime:diapause + regime:NestedPop)
+
+y1 <- estimateDisp(y, design1)
+y2 <- estimateDisp(y, design2)
+y3 <- estimateDisp(y, design3)
+y4 <- estimateDisp(y, design4)
+y5 <- estimateDisp(y, design5)
+y6 <- estimateDisp(y, design6)
+
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+plotBCV(y1, main='Model 1')
+plotBCV(y2, main='Model 2')
+plotBCV(y3, main='Model 3')
+plotBCV(y4, main='Model 4')
+plotBCV(y5, main='Model 5')
+plotBCV(y6, main='Model 6')
+```
+
+# Fitting the models
+
+```{r fig.width=9, fig.height=6}
+fit1 <- glmQLFit(y1, design1)
+fit2 <- glmQLFit(y2, design2)
+fit3 <- glmQLFit(y3, design3)
+fit4 <- glmQLFit(y4, design4)
+fit5 <- glmQLFit(y5, design5)
+fit6 <- glmQLFit(y6, design6)
+
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+plotQLDisp(fit1, main='Model 1')
+plotQLDisp(fit2, main='Model 2')
+plotQLDisp(fit3, main='Model 3')
+plotQLDisp(fit4, main='Model 4')
+plotQLDisp(fit5, main='Model 5')
+plotQLDisp(fit6, main='Model 6')
+
+layout(mat=matrix(c(1,2,3,4,5,6), ncol=3, nrow=2, byrow=TRUE))
+gof(fit1, plot=TRUE, main='Model 1')
+gof(fit2, plot=TRUE, main='Model 2')
+gof(fit3, plot=TRUE, main='Model 3')
+gof(fit4, plot=TRUE, main='Model 4')
+gof(fit5, plot=TRUE, main='Model 5')
+gof(fit6, plot=TRUE, main='Model 6')
+```
+
+It is clear from the plots above that models including the batch effect of the populations
+(1, 4, and 6) fit the data better than models that ignore the population effect.
+
+# Cuffdiff results
+On 2017-10-27, Eva recorded the genes differentially expressed at FDR 0.05 in four different
+files. I assume this is the original comparison that generated each file:
+
+* `I1vsI2_all.txt` Immediate hatching versus induced diapause in unpredictable regimes.
+* `P1vsP2_all.txt` Immediate hatching versus induced diapause in predictable regimes.
+* `I1vsP1_all.txt` Unpredictable versus predictable regimes, when hatching immedately.
+* `I2vsP2_all.txt` Unpredictable versus predictable regimes, when inducing diapause.
+
+```{r}
+I1vsI2 <- read.table("../2017-10-27/list_genes/I1vsI2_all.txt", 
+   colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+   col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+   "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+P1vsP2 <- read.table("../2017-10-27/list_genes/P1vsP2_all.txt",
+   colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+   col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+   "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+I1vsP1 <- read.table("../2017-10-27/list_genes/I1vsP1_all.txt",
+   colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+   col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+   "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+I2vsP2 <- read.table("../2017-10-27/list_genes/I2vsP2_all.txt",
+   colClasses=c("NULL", rep("character", 6), rep("numeric", 6),"factor"),
+   col.names=c("ignored","geneid","gene","locus","sample1","sample2","testStat",
+   "FPKMx","FPKMy","log2FC","statistic","p","q","significant"))
+Cuffdiff_hatching <- I1vsI2$geneid[I1vsI2$geneid %in% P1vsP2$geneid]
+Cuffdiff_regime   <- I1vsP1$geneid[I1vsP1$geneid %in% I2vsP2$geneid]
+```
+
+There are `r length(Cuffdiff_hatching)` genes differentially expressed between hatching
+conditions according to Cuffdiff. Among them, only `r sum(row.names(y$counts) %in% Cuffdiff_hatching)`
+passed the low expression filter.
+
+There are `r length(Cuffdiff_regime)` gene differentially expressed between selective
+regimes, according to Cuffdiff. Among them, only `r sum(row.names(y$counts) %in% Cuffdiff_regime)`
+passed the low expression filter.

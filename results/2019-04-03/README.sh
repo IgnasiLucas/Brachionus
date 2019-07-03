@@ -59,19 +59,14 @@
 # what model is better is to look at the number of genes with a significant interaction
 # term, I guess.
 
-GENE_COUNTS=../2019-03-29/genes.PostCount.txt
-ISOFORM_COUNTS=../2019-03-29/isoforms.PostCount.txt
+for folder in genes isoforms; do
+   if [ ! -d $folder ]; then mkdir $folder; fi
+   cd $folder
+   for report in Preliminar Hatching Interactions Regime; do
+      if [ ! -e $report.html ]; then
+         R --save -e $(printf "rmarkdown::render('../%s.Rmd', output_file='%s.html')" $report) --args ../../2019-03-29/$folder.PostCount.txt
+      fi
+   done
+   cd ..
+done
 
-
-if [ ! -d genes ]; then mkdir genes; fi
-if [ ! -e genes/report.html ]; then
-   R --save -e "rmarkdown::render('RunEdgeR.Rmd', output_file='genes/report.html')" --args $GENE_COUNTS genes
-   mv .RData genes/
-fi
-
-if [ ! -d isoforms ]; then mkdir isoforms; fi
-if [ ! -e isoforms/report.html ]; then
-   #Rscript --no-save RunEdgeR.R $ISOFORM_COUNTS isoforms
-   R --save -e "rmarkdown::render('RunEdgeR.Rmd', output_file='isoforms/report.html')" --args $ISOFORM_COUNTS isoforms
-   mv .RData isoforms/
-fi
