@@ -21,6 +21,7 @@ if (length(args) == 0) {
 }
 
 input_file_name <- args[1]
+input_file_name
 output_dir <- args[2]
 counts <- read.table(input_file_name, row.names=1, header=TRUE)
 names(counts)

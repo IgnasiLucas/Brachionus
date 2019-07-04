@@ -61,12 +61,35 @@
 
 for folder in genes isoforms; do
    if [ ! -d $folder ]; then mkdir $folder; fi
-   cd $folder
    for report in Preliminar Hatching Interactions Regime; do
-      if [ ! -e $report.html ]; then
-         R --save -e $(printf "rmarkdown::render('../%s.Rmd', output_file='%s.html')" $report) --args ../../2019-03-29/$folder.PostCount.txt
+      if [ ! -e $folder/$report.html ]; then
+         R --save -e $(printf "rmarkdown::render('%s.Rmd',output_file='%s.html',output_dir='%s')" $report $report $folder) --args ../2019-03-29/$folder.PostCount.txt $folder
       fi
    done
-   cd ..
+   R --save -e "rm(list=ls())"
 done
 
+# CONCLUSIONS
+# -----------
+#
+# Very few genes respond consistently to hatching condition, which is no unexpected. If I recall
+# correctly, hatching condition (either immedate hatching or induced diapause) was expected to
+# modulate the set of genes the expression of which could be affected by selective regime.
+#
+# In this respect, models 5 and 6 fail to identify any gene or isoform with a significant interaction
+# term between selective regime and hatching condition.
+#
+# In general, genes affected by regime seem to have their expression changed in the same direction
+# whether when immediately hatching or not. And significant genes under both conditions overlap extensively,
+# according to model 3.
+#
+# However, model 3 does not account for a possible batch effect of populations. Every pair of immediately
+# hatching or diapausing populations was derived from a common population at the end of the selection
+# experiment. Thus, there were 6 such pairs, derived from 6 selection experiments. Selection lasted
+# 8 cycles of either regular or unpredictable dissecation-hidration periods. It is possible that genetic
+# drift, together with selection, differentiated those populations to the point of creating a batch
+# effect.
+#
+# Model 4 is considered better than any other model. It includes the population effect, in addition to
+# the main effects of hatching condition and selective regime. According to model 4, no more than 65
+# genes (56 isoforms) are up- or down-regulated by the selective regime.

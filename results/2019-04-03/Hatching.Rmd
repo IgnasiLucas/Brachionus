@@ -185,36 +185,38 @@ According to model 3, there are `r dim(topTags(qlf3, n=NumOfTags, p.value=0.10))
 significantly up- or downregulated by hatching condition at FDR = 0.1.
 
 For the sake of comparing model 3 to the results from Cuffdiff, I will make each one of the
-four possible comparisons. The four coefficients of model correspond, in this order, to:
+four possible comparisons, if analysing genes. The four coefficients of model correspond, in this order, to:
 regular regime and immediate hatching, random regime and diapause, random regime and hatching,
 and regular regime and diapause. In Eva's terms, I believe they correspond to P1, I2, I1, and
-P2.
+P2. However, Cuffdiff was not run on isoforms, but only genes.
 
 ```{r fig.width=6, fig.height=6}
-#                                     P1 I2 I1 P2
-qlf3_1 <- glmQLFTest(fit3, contrast=c( 0,-1, 1, 0)) # I1vsI2
-qlf3_2 <- glmQLFTest(fit3, contrast=c( 1, 0, 0,-1)) # P1vsP2
-qlf3_3 <- glmQLFTest(fit3, contrast=c(-1, 0, 1, 0)) # I1vsP1
-qlf3_4 <- glmQLFTest(fit3, contrast=c( 0, 1, 0,-1)) # I2vsP2
+if (grepl('genes', input_file_name)) {
+   #                                     P1 I2 I1 P2
+   qlf3_1 <- glmQLFTest(fit3, contrast=c( 0,-1, 1, 0)) # I1vsI2
+   qlf3_2 <- glmQLFTest(fit3, contrast=c( 1, 0, 0,-1)) # P1vsP2
+   qlf3_3 <- glmQLFTest(fit3, contrast=c(-1, 0, 1, 0)) # I1vsP1
+   qlf3_4 <- glmQLFTest(fit3, contrast=c( 0, 1, 0,-1)) # I2vsP2
 
-z1 <- topTags(qlf3_1, n=NumOfTags)$table
-z2 <- topTags(qlf3_2, n=NumOfTags)$table
-z3 <- topTags(qlf3_3, n=NumOfTags)$table
-z4 <- topTags(qlf3_4, n=NumOfTags)$table
+   z1 <- topTags(qlf3_1, n=NumOfTags)$table
+   z2 <- topTags(qlf3_2, n=NumOfTags)$table
+   z3 <- topTags(qlf3_3, n=NumOfTags)$table
+   z4 <- topTags(qlf3_4, n=NumOfTags)$table
 
-z1$inCuffdiff <- row.names(z1) %in% I1vsI2$geneid
-z2$inCuffdiff <- row.names(z2) %in% P1vsP2$geneid
-z3$inCuffdiff <- row.names(z3) %in% I1vsP1$geneid
-z4$inCuffdiff <- row.names(z4) %in% I2vsP2$geneid
+   z1$inCuffdiff <- row.names(z1) %in% I1vsI2$geneid
+   z2$inCuffdiff <- row.names(z2) %in% P1vsP2$geneid
+   z3$inCuffdiff <- row.names(z3) %in% I1vsP1$geneid
+   z4$inCuffdiff <- row.names(z4) %in% I2vsP2$geneid
 
-layout(mat=matrix(c(1,2,3,4), ncol=2, nrow=2, byrow=TRUE))
-qqplot(z1$PValue[z1$inCuffdiff], z1$PValue[!z1$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Random')
-qqplot(z2$PValue[z2$inCuffdiff], z2$PValue[!z2$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Regular')
-qqplot(z3$PValue[z3$inCuffdiff], z3$PValue[!z3$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when hatching')
-qqplot(z4$PValue[z4$inCuffdiff], z4$PValue[!z4$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when diapausing')
+   layout(mat=matrix(c(1,2,3,4), ncol=2, nrow=2, byrow=TRUE))
+   qqplot(z1$PValue[z1$inCuffdiff], z1$PValue[!z1$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Random')
+   qqplot(z2$PValue[z2$inCuffdiff], z2$PValue[!z2$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Hatching vs Diapause, when Regular')
+   qqplot(z3$PValue[z3$inCuffdiff], z3$PValue[!z3$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when hatching')
+   qqplot(z4$PValue[z4$inCuffdiff], z4$PValue[!z4$inCuffdiff], xlab='Cuffdiff genes p-values', ylab='Other genes p-values', main='Random vs Regular, when diapausing')
+}
 ```
 
-The graphs above compare the distribution of p-values of genes called differentially regulated by
+If analysing genes, the graphs above compare the distribution of p-values of genes called differentially regulated by
 Cuffdiff with the distribution of p-values among the rest of genes. It can be seen that in all
 comparisons, the genes detected as differentially expressed by Cuffdiff are not assigned lower
 p-values by EdgeR in the same comparisons. Rather, they look random samples of genes with respect

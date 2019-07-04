@@ -188,6 +188,15 @@ ggplot(data=z2, mapping=aes(x=logFC.x, y=logFC.y, color=FDR.x)) +
    geom_point() + geom_smooth(method='lm') + xlab('logFC hatching') + ylab('logFC diapause')
 ```
 
+And this is the overlap between genes (or isoforms) affected by selective regime when hatching is immediate and
+those affected by selective regime when diapause is induced:
+
+```{r}
+significant <- cbind(model3a = topTags(qlf3a, n=NumOfTags, sort.by='none')$table$FDR <= 0.05,
+                     model3b = topTags(qlf3b, n=NumOfTags, sort.by='none')$table$FDR <= 0.05)
+vennDiagram(vennCounts(significant))
+```
+
 ## Average effect of selective regime
 
 ```{r}
@@ -217,7 +226,12 @@ ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
 ```
 
 According to model 4, there are `r dim(topTags(qlf4,n=NumOfTags,p.value=0.25))[1]` tags
-significantly up- or downregulated by selective regime at FDR=0.25.
+significantly up- or downregulated by selective regime at FDR=0.25. I wrote some of them
+to a text file:
+
+```{r}
+write.table(topTags(qlf4, n=NumOfTags, p.value=0.15), file=sprintf("%s/regime.txt", args[2]), quote=FALSE)
+```
 
 # Model 5
 
