@@ -23,6 +23,8 @@ conda create --name Brachionus --file spec-file.txt
 ```
 
 ---------------------------------------------------------------------------------------------------
+# 2019-07-10
+Functional annotation of transcripts.
 
 # 2019-04-03
 I use the package edgeR to identify genes differentially expressed between selective regimes and
