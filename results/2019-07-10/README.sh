@@ -22,6 +22,7 @@
 
 GFF="../2019-03-29/z1.gtf"
 REF="../../data/reference.fa"
+DATADIR="../../data/2019-07-10"
 
 # gff2fasta outputs a header in the fasta file, which I want to re-direct to a log file.
 # It can also include transcript attributes found in the gtf file in the name of the
@@ -45,13 +46,40 @@ if [ ! -e transcripts.fa ]; then
    rm pipe
 fi
 
+
+# I use TransDecoder to identify the CDS within the transcripts.
 if [ ! -e transdecoder/longest_orfs.pep ]; then
    TransDecoder.LongOrfs -t transcripts.fa -S -O transdecoder
 fi
 
-if [ ! -e blastp.outfmt6 ]; then
-   if [ ! -e swissprot.00.phr ]; then
-      update_blastdb.pl --decompress swissprot
+# Following TransDecoder's recommendations, I use blastp and pfam searches to identify the
+# most promising proteins.
+
+if [ ! -d $DATADIR ]; then mkdir $DATADIR; fi
+
+if [ ! -e transcripts.fa.transdecoder.pep ]; then
+   if [ ! -e blastp.outfmt6 ]; then
+      if [ ! -e $DATADIR/swissprot.00.phr ]; then
+         update_blastdb.pl --decompress swissprot
+         mv swissprot* $DATADIR/
+         mv taxdb* $DATADIR/
+      fi
+      blastp -query transdecoder/longest_orfs.pep -db $DATADIR/swissprot -max_target_seqs 1 -outfmt 6 -evalue 1e-5 -num_threads 10 > blastp.outfmt6
    fi
-   blastp -query transdecoder/longest_orfs.pep -db swissprot -max_target_seqs 1 -outfmt 6 -evalue 1e-5 -num_threads 10 > blastp.outfmt6
+   if [ ! -e pfam.domtblout ]; then
+      if [ ! -e $DATADIR/Pfam-A.hmm.h3f ]; then
+         if [ ! -e Pfam-A.hmm ]; then
+            wget ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz
+            gunzip Pfam-A.hmm.gz
+         fi
+         hmmpress Pfam-A.hmm
+         mv Pfam* $DATADIR/
+      fi
+      # hmmscan searches protein sequences against an (indexed) HMM database.
+      hmmscan --cpu 50 --domtblout pfam.domtblout --noali $DATADIR/Pfam-A.hmm transdecoder/longest_orfs.pep > pfam.log
+   fi
+   TransDecoder.Predict -t transcripts.fa --retain_pfam_hits pfam.domtblout --retain_blastp_hits blastp.outfmt6 -O transdecoder
 fi
+
+#rm -r transdecoder
+#rm -r transdecoder.__checkpoints
