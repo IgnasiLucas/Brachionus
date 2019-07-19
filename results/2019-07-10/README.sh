@@ -78,8 +78,16 @@ if [ ! -e transcripts.fa.transdecoder.pep ]; then
       # hmmscan searches protein sequences against an (indexed) HMM database.
       hmmscan --cpu 50 --domtblout pfam.domtblout --noali $DATADIR/Pfam-A.hmm transdecoder/longest_orfs.pep > pfam.log
    fi
-   TransDecoder.Predict -t transcripts.fa --retain_pfam_hits pfam.domtblout --retain_blastp_hits blastp.outfmt6 -O transdecoder
+   TransDecoder.Predict -t transcripts.fa --retain_pfam_hits pfam.domtblout --retain_blastp_hits blastp.outfmt6 -O transdecoder --single_best_only
 fi
 
 #rm -r transdecoder
 #rm -r transdecoder.__checkpoints
+
+# There is a lot of rubbish generated. The main result here is the transcripts.fa.transdecoder.pep file,
+# which is a fasta file with the selected proteins that have blastp and/or pfam hits. Their names now
+# include information about those hits. The main identifier is the transcript_id. The gene_id is not
+# included in the name, but can easily be tracked from the 2019-03-29/z1.gtf file. 
+#
+# In all, there are 49663 proteins, from 49663 transcripts. At this point, I abandon the cgat environment
+# and the present folder to run interproscan in the next one.
