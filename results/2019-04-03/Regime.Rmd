@@ -226,11 +226,12 @@ ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
 ```
 
 According to model 4, there are `r dim(topTags(qlf4,n=NumOfTags,p.value=0.25))[1]` tags
-significantly up- or downregulated by selective regime at FDR=0.25. I wrote some of them
-to a text file:
+significantly up- or downregulated by selective regime at FDR=0.25. I write the ordered list
+of genes with there fold change and p-values according to this model in a file, for later
+use in a functional enrichment analysis:
 
 ```{r}
-write.table(topTags(qlf4, n=NumOfTags, p.value=0.15), file=sprintf("%s/regime.txt", args[2]), quote=FALSE)
+write.table(topTags(qlf4, n=NumOfTags), file=sprintf("%s/regime.txt", args[2]), quote=FALSE)
 ```
 
 # Model 5
