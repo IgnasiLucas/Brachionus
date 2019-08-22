@@ -1,0 +1,214 @@
+---
+title: "Functional Enrichment Analysis"
+output: html_document
+author: "J. Ignacio Lucas Lledó"
+---
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+library(topGO)
+```
+
+# Reading the data
+In folder 2019-04-03 I produced the lists of genes and isoforms that underwent the differential
+expression analysis, with the fold change, the p-values, etc. In addition, some transcripts were
+annotated in folder 2019-07-19 with Gene Ontology terms. From that analysis, I produced here the
+lists of annotated genes and transcripts with there attributed GO terms. TopGO requires both the
+genes (or transcripts) with an ordering criteria (e.g., p-value), and the annotation, which can
+be uploaded as a named list.
+
+Here, I want to re-use this script to run the enrichment analysis of both genes and isoforms, and
+both for gene expression differences in between selective regimes and between hatching conditions.
+Let's read the arguments to figure what what I am doing now.
+
+It was not trivial to get `grep` below return a single logical value. I need to use `any(grep(...))`.
+
+```{r}
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 2) {
+   stop("I need the file names of the list of genes or isoforms and their annotations.", call.=FALSE)
+} else {
+   list_file <- args[1]
+   annotation_file <- args[2]
+}
+
+if (any(grep("gene", annotation_file, fixed=TRUE))) {
+   TagType = "genes"
+} else {
+   if (any(grep("trans", annotation_file, fixed=TRUE))) {
+      TagType = "transcripts"
+   } else {
+      TagType = "unknown tags!"
+   }
+}
+
+if (any(grep("regime", list_file, fixed=TRUE))) {
+   AnalysisType = "selective regimes"
+} else {
+   if (any(grep("hatching", list_file, fixed=TRUE))) {
+      AnalysisType = "hatching conditions"
+   } else {
+     AnalysisType = "unknown conditions"
+   }
+}
+```
+
+So, here I am running a functional enrichment analysis among `r TagType` differentially expressed
+between `r AnalysisType`. The `list_file`, here `r list_file`, includes all the `r TagType` that
+passed the filters, and is already formated for the header to be recognized. I only need a named
+list of p-values, where the names correspond to the `r TagType`. Thus, I skip the columns containing
+the log fold change, the log count per million, the F statistic and the false discovery rate.
+
+```{r}
+tags <- read.table(list_file, colClasses = c("character", "NULL", "NULL", "NULL", "numeric", "NULL"))
+PValues <- structure(tags$PValue, names = row.names(tags))
+rm(tags)
+```
+
+There are `r length(PValues)` `r TagType`. Now, I load the functional annotation of the `r TagType`
+as a named list. 
+
+```{r}
+annotation <- read.table(annotation_file, col.names = c('tagname', 'goterms'))
+allgenes2GO <- strsplit(as.character(annotation$goterms), "|", fixed = TRUE)
+names(allgenes2GO) <- annotation$tagname
+rm(annotation)
+```
+
+There are `r length(allgenes2GO)` `r TagType` with GO annotations. But the differential expression
+analysis includes many more `r TagType`. If I wanted to include the not-annotated `r TagType` in the
+enrichment analysis, to see if annotated or not annotated `r TagType` are more or less often
+differentially expressed, I should attribute a GO term to them. According to http://geneontology.org/docs/faq/
+nowadays we express lack of annotation by annotating to the root nodes, i.e. GO:0008150 biological_process,
+GO:0003674 molecular_function, and GO:0005575 cellular_component.
+
+```{r}
+for (tag in names(PValues)) {
+   if (! tag %in% names(allgenes2GO)) {
+      allgenes2GO <- append(allgenes2GO,
+         structure(list(c("GO:0008150", "GO:0003674", "GO:0005575")), names = tag))
+   }
+}
+```
+
+# Building the topGO object
+
+Creation of a topGO dataset is documented in section 4 of topGO's the user manual:
+https://bioconductor.org/packages/release/bioc/vignettes/topGO/inst/doc/topGO.pdf.
+I need to use the `new`
+command, and fill up the slots. The `annot` object must be a function that compiles "a list of
+GO terms such that each element in the list is a character vector containing all the gene 
+identifiers that are mapped to the respective GO term." There are several options, that you can
+check using `help(annFUN.gene2GO)`, for example. The `annFUN.gene2GO` requires a `gene2GO`
+argument, which is the list of gene-to-GO terms I made before. The `geneSelectionFun` object is a
+function that selects the *interesting* (most significant) genes. It is required to
+perform Fisher's exact test. The `nodeSize` is used to prune the GO hierarchy from the terms
+which have less than `n` annotated genes.
+
+I generate three datasets, to analyse each of the three ontologies.
+
+```{r results = 'hold', message = FALSE}
+selection <- function(allScores) {return(allScores < 0.05)}
+GOdata.BP <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'BP', 
+   allGenes = PValues,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+GOdata.MF <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'MF',
+   allGenes = PValues,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+GOdata.CC <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'CC',
+   allGenes = PValues,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+library(knitr)
+DataSummary <- data.frame(ontology = c('BP', 'MF', 'CC'),
+   Num_Genes = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), numGenes),
+   Num_GO_terms = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), function(x) length(usedGO(x))))
+kable(DataSummary, caption='Number of feasible genes or transcripts and number of GO terms used in each data set.')
+rm(DataSummary)
+```
+
+# Running the tests
+
+There are more than one way to test for enrichment. Something that took me a while to understand
+is that not only there are different test statistics (Fisher's exact test, Kolmogorov-Smirnov,
+and others) but also different *algorithms*: classic, elim, weight... The algorithms are ways
+to deal with the dependence structure among GO terms due to topology. Some algorithms are
+compatible with all statistics implemented in topGO. But the *weight* and the *parentchild*
+algorithms are only applicable to Fisher's exact test. I am not interested in the classic
+algorithm, which treats GO nodes as independent, and therefore produces an excess of significant
+results. I will not use the Fisher's exact test, because it dependes on an arbitrary threshold
+of significance on non-adjusted p-values.
+
+```{r results = 'asis', message = FALSE}
+BP.elim     <- runTest(GOdata.BP, algorithm = "elim",     statistic = "ks")
+BP.weight01 <- runTest(GOdata.BP, algorithm = "weight01", statistic = "ks")
+BP.lea      <- runTest(GOdata.BP, algorithm = "lea",      statistic = "ks")
+MF.elim     <- runTest(GOdata.MF, algorithm = "elim",     statistic = "ks")
+MF.weight01 <- runTest(GOdata.MF, algorithm = "weight01", statistic = "ks")
+MF.lea      <- runTest(GOdata.MF, algorithm = "lea",      statistic = "ks")
+CC.elim     <- runTest(GOdata.CC, algorithm = "elim",     statistic = "ks")
+CC.weight01 <- runTest(GOdata.CC, algorithm = "weight01", statistic = "ks")
+CC.lea      <- runTest(GOdata.CC, algorithm = "lea",      statistic = "ks")
+
+ResultsSummary <- data.frame(ontology = rep(c("BP", "MF", "CC"), each = 3),
+   algorithm = rep(c("elim", "weight01", "lea"), 3),
+   TermsTested = sapply(list(BP.elim, BP.weight01, BP.lea, MF.elim, MF.weight01, MF.lea, CC.elim, CC.weight01, CC.lea), function(X) length(score(X))),
+   Significant = sapply(list(BP.elim, BP.weight01, BP.lea, MF.elim, MF.weight01, MF.lea, CC.elim, CC.weight01, CC.lea), function(X) sum(score(X) < 0.01)))
+
+kable(ResultsSummary, caption="Number of non-trivial terms tested and those with a score (not corrected p-value) lower than 0.01.")
+rm(ResultsSummary)
+```
+
+# Results
+
+Curiously, topGO does not pay much attention to what terms are significant because they are
+_over_represented and which ones are _under_represented. I think it's worth separating them,
+to facilitate the biological interpretation. Note that not all terms listed in the tables
+below are significant. The scores for the three methods (elim, weight01 and lea) are non-corrected
+p-values.
+
+```{r message = FALSE, results='asis'}
+BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
+MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
+CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
+
+kable(
+   BP.all[BP.all$Significant > BP.all$Expected,],
+   caption = "Most over-represented terms of the Biological Process ontology.")
+
+kable(
+   BP.all[BP.all$Significant < BP.all$Expected,],
+   caption = "Most under-represented terms of the Biological Process ontology.")
+
+kable(
+   MF.all[MF.all$Significant > MF.all$Expected,],
+   caption = "Most over-represented terms of the Molecular Function ontology.")
+
+kable(
+   MF.all[MF.all$Significant < MF.all$Expected,],
+   caption = "Most under-represented terms of the Molecular Function ontology.")
+
+kable(
+   CC.all[CC.all$Significant > CC.all$Expected,],
+   caption = "Most over-represented terms of the Cellular Component ontology.")
+
+kable(
+   CC.all[CC.all$Significant < CC.all$Expected,],
+   caption = "Most under-represented terms of the Cellular Component ontology.")
+```

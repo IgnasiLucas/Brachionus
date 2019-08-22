@@ -23,8 +23,19 @@ conda create --name Brachionus --file spec-file.txt
 ```
 
 ---------------------------------------------------------------------------------------------------
+# 2019-07-26
+Use the R package topGO to run a functional enrichment analysis among the genes (or transcripts) that
+are differentially expressed between selective regime or hatching condition.
+
+# 2019-07-19
+I use InterProScan to assign functional annotations to the proteins identified by TransDecoder among
+the transcripts. Only 25% of the original 77728 transcripts (18% of the original genes) get any GO annotation.
+
 # 2019-07-10
-Functional annotation of transcripts.
+To start the functional annotation of transcripts, I use the gff2fasta tool of the cgat package to
+extract the sequences of the 77728 transcripts. Then I use TransDecoder to identify the most promising
+protein encoded within each transcript. TransDecoder predicts a protein in no more than 49663
+transcripts.
 
 # 2019-04-03
 I use the package edgeR to identify genes differentially expressed between selective regimes and
