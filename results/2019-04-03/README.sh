@@ -69,6 +69,22 @@ for folder in genes isoforms; do
    R --save -e "rm(list=ls())"
 done
 
+# RESULTS
+#
+# You can see rendered versions of the results following the links below:
+#
+# * Using genes as units of expression:
+#   * [Preliminar analysis](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Preliminar.html)
+#   * [Effect of hatching condition](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Hatching.html)
+#   * [Interaction between hatching condition and selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Interactions.html)
+#   * [Effect of the selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Regime.html)
+# * Using isoforms (transcripts):
+#   * [Preliminar analysis](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Preliminar.html)
+#   * [Effect of hatching condition](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Hatching.html)
+#   * [Interaction between hatching condition and selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Interactions.html)
+#   * [Effect of the selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Regime.html)
+#
+#
 # CONCLUSIONS
 # -----------
 #

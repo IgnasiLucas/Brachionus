@@ -34,3 +34,17 @@ for i in 0 1; do
    done
 done
 
+# You can see a rendered version of the reports using the following links:
+#
+# Genes differentially expressed between selective regimes:
+#    https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/genes/regime.html
+#
+# Genes differentially expressed between hatching conditions:
+#    https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/genes/hatching.html
+#
+# Transcripts differentially expressed between selective regimes:
+#    https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/transcripts/regime.html
+#
+# Transcripts differentially expressed between hatching conditions:
+#    https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/transcripts/hatching.html
+

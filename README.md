@@ -2,7 +2,7 @@
 
 This project contains some analysis performed by Dr. Eva Tarazona Castelblanque, for one chapter of her
 PhD thesis, which is available here: http://roderic.uv.es/handle/10550/67254. It is a comparison of
-gene expression levels in diapausing eggs from rotifer Brachionus plicatilis, from RNA-seq data.
+gene expression levels in diapausing eggs from rotifer *Brachionus plicatilis*, from RNA-seq data.
 
 In this repository, my aim is to improve the reproducibility of Eva's results and potentially contribute
 some details to the analysis. Below, I will update the summaries of the results in reverse chronological
@@ -22,10 +22,19 @@ results. To re-create the conda environment that I call Brachionus do this:
 conda create --name Brachionus --file spec-file.txt
 ```
 
+Some folders have their own conda environment.
+
 ---------------------------------------------------------------------------------------------------
+
 # 2019-07-26
 Use the R package topGO to run a functional enrichment analysis among the genes (or transcripts) that
-are differentially expressed between selective regime or hatching condition.
+are differentially expressed between selective regimes or hatching conditions. Find rendered versions
+of the final reports here:
+
+* [Genes differentially expressed between selective regimes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/genes/regime.html)
+* [Genes differentially expressed between hatching conditions](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/genes/hatching.html)
+* [Transcripts differentially expressed between selective regimes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/transcripts/regime.html)
+* [Transcripts differentially expressed between hatching conditions](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-07-26/transcripts/hatching.html)
 
 # 2019-07-19
 I use InterProScan to assign functional annotations to the proteins identified by TransDecoder among
@@ -39,7 +48,18 @@ transcripts.
 
 # 2019-04-03
 I use the package edgeR to identify genes differentially expressed between selective regimes and
-hatching conditions.
+hatching conditions. Find the rendered versions of the RMarkdown reports here:
+
+* Using genes as units of expression:
+  * [Preliminar analysis](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Preliminar.html)
+  * [Effect of hatching condition](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Hatching.html)
+  * [Interaction between hatching condition and selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Interactions.html)
+  * [Effect of the selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/genes/Regime.html)
+* Using isoforms (transcripts):
+  * [Preliminar analysis](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Preliminar.html)
+  * [Effect of hatching condition](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Hatching.html)
+  * [Interaction between hatching condition and selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Interactions.html)
+  * [Effect of the selective regime](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-04-03/isoforms/Regime.html)
 
 # 2019-03-29
 I quantify the expression using an alternative method. Here I use RSEM to obtain raw counts
