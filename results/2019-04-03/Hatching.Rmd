@@ -141,8 +141,8 @@ ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) +
    ggtitle('Effect of enforcing diapause, model 1')
 ```
 
-I would say the two first genes (XLOC_052427 and XLOC_045087) are significantly downregulated
-when enforcing diapause, with respect to the immediate hatching condition. Below, I print to a
+According to model 1, there are `r dim(topTags(qlf1, n=NumOfTags, p.value=0.4))[1]` tags
+significantly up- or downregulated by hatching condition, at FDR <= 0.4. Below, I print to a
 file the whole list of genes (or transcripts) for a functional enrichment analysis:
 
 ```{r}

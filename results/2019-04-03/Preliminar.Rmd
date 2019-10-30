@@ -84,6 +84,8 @@ y <- y[keep, ,keep.lib.sizes=FALSE]
 plotMDS(y$counts)
 ```
 
+Filtering reduced the number of tags from `r length(keep)` to `r sum(keep)`.
+
 The magnitude of variation along the axes seems very high in comparison with the examples
 available in the EdgeR manual, suggesting wild gene expression differences. With the exception
 of sample X5A_S2, dimension 1 separates samples undergoing forced diapause (named with a "C",
