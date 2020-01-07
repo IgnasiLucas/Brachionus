@@ -14,96 +14,204 @@ library(cp4p)
 COUNTS_FILE='../2019-03-29/genes.PostCount.txt'
 ```
 
-The following is the same as in `../2019-04-03/Preliminar.Rmd`. Because edgeR is fast enough
-to fit the model, and because I did not save an environment, I just run this again here. I am
-fitting only model 4, because it has already been determined that there are no genes with a
-significant interaction between selective regime and hatching condition, but there are significant
-interaction terms between selective regime and original population. It seems reasonable that no
-interaction between the two main factors can be observed if different populations are responding
-differently to the selective regime.
+One of the conclusions in `2019-04-03` was that there is a significant interaction between the
+effects of the regime and of the original population. That means that not all populations responded
+equally to a specific selective regime. We need to take this into account to decide what contrasts
+are interesting. Not only the genes that are *on average* differently expressed in regular than
+in random environments are interesting. The specific response of each random population may have
+biological meaning.
 
-```{r models, cache=TRUE}
-# Variables
+On `2019-04-03` we also determined that there are no genes with a significant interaction between
+selective regime and hatching condition. This may be a simple consequence of the fact that not
+all populations respond similarly to the selective regimes: in this situation, there are just
+not enough replicates to detect an interaction between regime and hatching condition.
+
+# Genes expressed *on average* differently between random and regular regimes
+
+When I first tested the effect of randomness on expression level using model 4 and 6 on `2019-04-03`,
+I tested for a significant second coefficient, which corresponds to the expression level of a
+sample from original population 1 under a random regime, relative to the expression level of population
+3, under a regular regime. That does not seem to be what I want. To make it easier to express a contrast
+that compares all random populations to all regular ones, I will use a different model.
+
+```{r variables, cache=TRUE}
 counts <- read.table(COUNTS_FILE, row.names=1, header=TRUE)
-population <- factor(c("1","1","2","2","3","3","4","4","5","5","6","6"))
-NestedPop  <- factor(c("1","1","2","2","1","1","3","3","2","2","3","3"))
+regimePop <- factor(c('random1',  'random1',  'random2',  'random2',
+                      'regular1', 'regular1', 'random3',  'random3',
+                      'regular2', 'regular2', 'regular3', 'regular3'))
 diapause   <- factor(rep(c("hatch","diapause"), 6))
 diapause   <- relevel(diapause, "hatch")
-regime     <- factor(c("random","random","random","random","regular","regular",
-                 "random","random","regular","regular","regular","regular"))
-regime     <- relevel(regime, "regular")
 
 # Filtering
-y <- DGEList(counts=counts, group=regime)
+y <- DGEList(counts=counts, group=regimePop)
 y <- calcNormFactors(y, method="TMM")
 threshold <- 5.0 / (min(y$samples$lib.size) / 1000000)
 keep <- rowSums(cpm(y) > threshold) >= 4
 y <- y[keep, ,keep.lib.sizes=FALSE]
 NumOfTags <- dim(y)[1]
-
-# Model
-design4 <- model.matrix(~regime + diapause + regime:NestedPop)
-row.names(design4) <- names(counts)
-reactable(design4, columns=list(
-  '(Intercept)' = colDef(name='intercept'),
-  regimerandom  = colDef(name='random'),
-  diapausediapause = colDef(name='diapause'),
-  'regimeregular:NestedPop2' = colDef(name='regular:2'),
-  'regimeregular:NestedPop3' = colDef(name='regular:3'),
-  'regimerandom:NestedPop2'  = colDef(name='random:2'),
-  'regimerandom:NestedPop3'  = colDef(name='random:3')))
-y4 <- estimateDisp(y, design4)
-fit4 <- glmQLFit(y4, design4)
+design7 <- model.matrix(~ 0 + regimePop + diapause)
+row.names(design7) <- names(counts)
+reactable(design7, columns=list(
+  regimePoprandom1 = colDef(name='Random.1'),
+  regimePoprandom2 = colDef(name='Random.2'),
+  regimePoprandom3 = colDef(name='Random.3'),
+  regimePopregular1 = colDef(name='Regular.1'),
+  regimePopregular2 = colDef(name='Regular.2'),
+  regimePopregular3 = colDef(name='Regular.3'),
+  diapausediapause = colDef(name='diapause')))
+y7 <- estimateDisp(y, design7)
+fit7 <- glmQLFit(y7, design7)
+randomness <- glmQLFTest(fit7, contrast = c(1/3, 1/3, 1/3, -1/3, -1/3, -1/3, 0))
 ```
+
+By treating populations independently, model 7 neither assumes nor estimates whatever common effect
+populations in the same regime may share.
 
 Instead of reporting the number of significantly regulated genes under a specific FDR,
-I would like to report the overall, FDR-independent, estimated fraction of regulated
-genes. I know there are ways to estimate the number of true null hypotheses, even when
+I report here the overall, FDR-independent, estimated fraction of regulated
+genes. There are ways to estimate the number of true null hypotheses even when
 there is a dependence structure among tests. I found the package `cp4p` (Gianetto et al.
-2016. Proteomics, 16(1), 29-32.), that does exactly that.
+2016. Proteomics, 16(1), 29-32.), that does exactly that. The SLIM method [Want et al. 2011](https://academic.oup.com/bioinformatics/article/27/2/225/286449),
+is supposed to be adequate for datasets with dependence structure, but I think here it
+overestimates the proportion of non-regulated genes.
 
-```{r tests}
-DE.random    <- glmQLFTest(fit4, coef = 2)
-DE.regular.2 <- glmQLFTest(fit4, coef = 4)
-DE.random.2  <- glmQLFTest(fit4, coef = 5)
-DE.regular.3 <- glmQLFTest(fit4, coef = 6)
-DE.random.3  <- glmQLFTest(fit4, coef = 7)
-PropNonDE <- rbind(estim.pi0(DE.random$table$PValue)$pi0.est,
-                   estim.pi0(DE.regular.2$table$PValue)$pi0.est,
-                   estim.pi0(DE.random.2$table$PValue)$pi0.est,
-                   estim.pi0(DE.regular.3$table$PValue)$pi0.est,
-                   estim.pi0(DE.random.3$table$PValue)$pi0.est)
-row.names(PropNonDE) <- c('random', 'regular.2', 'random.2', 'regular.3', 'random.3')
-reactable(t(PropNonDE), defaultColDef = colDef(format = colFormat(digits = 2)))
+
+```{r randomness, cache=TRUE}
+randomness.pi0 <- estim.pi0(randomness$table$PValue)
+randomness.pi0
+calibration.plot(randomness$table$PValue, pi0.method = 'langaas')
+topTags(randomness)
+z1 <- topTags(randomness, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Random versus regular. Model 7.')
+rm(z1)
 ```
 
-These are the estimated proportions of genes the expression of which is *not* affected by the
-condition represented by the coefficient being tested. Namely, coefficient
-2 (*random*) represents the effect of the random selective regime, relative to the regular
-regime; coefficient 4 (*regular.2*) is the effect of the second population within the regular
-regime (population 5) relative to the first population in the regular regime (population 3);
-coefficient 5 (*random.2*) is the effec of the second population in the random regime (population
-2) relative to the first population in the random regime (population 1); coefficient 6
-(*regular.3*) is the effect of the third population in the regular regime (population 6)
-relative to the first population in the regular regime (population 3); and coefficient 7 (*random.3*)
-is the effect of the third population in the random regime (population 4) relative to the
-first population in the random regime (population 1).
+According to this test, at least `r round(1 - max(randomness.pi0$pi0.est), 2) * 100` and
+up to `r round(1.0 - min(randomness.pi0$pi0.est), 2) * 100`% of genes are differentially expressed
+on average between regular and random regimes.
 
-The SLIM method [Want et al. 2011](https://academic.oup.com/bioinformatics/article/27/2/225/286449),
-is supposed to be adequate for datasets with dependence structure. I am inclined to believe its results,
-even though it suggests that the third population under regular regime has a lot of genes expressed
-differently than the first population under regular regime.
+# Genes expressed differently in random population 1 than in the average regular population
 
-```{r calibrationPlots}
-calibration.plot(DE.random$table$PValue, pi0.method = 'slim')
-calibration.plot(DE.regular.2$table$PValue, pi0.method = 'slim')
-calibration.plot(DE.random.2$table$PValue, pi0.method = 'slim')
-calibration.plot(DE.regular.3$table$PValue, pi0.method = 'slim')
-calibration.plot(DE.random.3$table$PValue, pi0.method = 'slim')
+Using again model 7, now I want to determine what genes are expressed differently in random
+population 1, with respect to the average regular population.
+
+```{r random1, cache=TRUE}
+random1 <- glmQLFTest(fit7, contrast = c(1, 0, 0, -1/3, -1/3, -1/3, 0))
+random1.pi0 <- estim.pi0(random1$table$PValue)
+random1.pi0
+calibration.plot(random1$table$PValue, pi0.method = 'langaas')
+topTags(random1)
+z1 <- topTags(random1, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Random:1 versus regular. Model 7.')
+rm(z1)
 ```
 
-But I think it would make more sense to compare each population in a regime to the same baseline.
-For example, the interesting question is not how many and what genes are expressed differently between
-population 1 and population 2, both under the random regime (coefficient 5). The question is how
-many and what genes in population 2 (or 1, or 3) are differentially expressed with respect to all
-populations in the regular regime. We can do that using contrasts.
+According to this test, at least `r round(1 - max(random1.pi0$pi0.est), 2) * 100` and
+up to `r round(1.0 - min(random1.pi0$pi0.est), 2) * 100`% of genes are expressed differently
+in population 1, under a random regime, relative to the average across populations in the
+regular regime.
+
+# Genes expressed differently in random population 2 than in the average regular population
+
+Next, we examine population 2, also under a random regime, relative to the average of populations
+under the regular regime.
+
+```{r random2, cache=TRUE}
+random2 <- glmQLFTest(fit7, contrast = c(0, 1, 0, -1/3, -1/3, -1/3, 0))
+random2.pi0 <- estim.pi0(random2$table$PValue)
+random2.pi0
+calibration.plot(random2$table$PValue, pi0.method = 'langaas')
+topTags(random2)
+z1 <- topTags(random2, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Random:2 versus regular. Model 7.')
+rm(z1)
+```
+
+According to this test, at least `r round(1 - max(random2.pi0$pi0.est), 2) * 100` and
+up to `r round(1.0 - min(random2.pi0$pi0.est), 2) * 100`% of genes are expressed differently
+in population 2, under a random regime, relative to the average across populations in the
+regular regime.
+
+# Genes expressed differently in (random) population 4 than in the average regular population
+
+The third population under a random regime is labeled *4* in samples names. Let's see what and
+how many genes are expressed differently in that population, relative to those under regular
+regime:
+
+```{r random3, cache=TRUE}
+random3 <- glmQLFTest(fit7, contrast = c(0, 0, 1, -1/3, -1/3, -1/3, 0))
+random3.pi0 <- estim.pi0(random3$table$PValue)
+random3.pi0
+calibration.plot(random3$table$PValue, pi0.method = 'langaas')
+topTags(random3)
+z1 <- topTags(random3, n=NumOfTags)$table
+z1$logPValue <- -log10(z1$PValue)
+ggplot(data=z1, mapping=aes(x=logFC, y=logPValue, color=FDR)) + 
+   geom_point() + theme_grey() + ylab(expression(paste("-log"[10], plain("(p value)")))) +
+   ggtitle('Random:3 versus regular. Model 7.')
+rm(z1)
+```
+
+According to this test, at least `r round(1 - max(random3.pi0$pi0.est), 2) * 100` and
+up to `r round(1.0 - min(random3.pi0$pi0.est), 2) * 100`% of genes are expressed differently
+in population 3, under a random regime, relative to the average across populations in the
+regular regime.
+
+
+# Genes always expressed differently in a random population than in the average regular population
+
+The scatterplot of p-values is not expected to produce any visible correlation, unless for the smallest
+p-values. Plotting p-values in logarithmic scale does show that many genes differentially expressed
+in any population under the random regime is also differentially expressed in the other populations
+in the same regime.
+
+```{r scatterplot}
+pairs(data.frame(rand1=log(random1$table$PValue),
+                 rand2=log(random2$table$PValue),
+                 rand3=log(random3$table$PValue)),
+      pch=".", main='Log(p-values)')
+```
+
+What about the log-fold change? Does the random regime change gene expression in the same direction in
+all populations? Yes:
+
+```{r logFoldChange}
+pairs(data.frame(rand1=random1$table$logFC,
+                 rand2=random2$table$logFC,
+                 rand3=random3$table$logFC),
+      pch = ".", main = 'Log(fold change)')
+```
+
+Given the large number of regulated genes, I can use a conservative FDR to compare the most significantly
+regulated genes among populations in the random regime.
+
+```{r venn}
+significant <- cbind(randomness = topTags(randomness, n=NumOfTags, sort.by='none', adjust.method='fdr')$table$FDR <= 0.1, 
+                     random1 = topTags(random1, n=NumOfTags, sort.by='none', adjust.method='fdr')$table$FDR <= 0.1,
+                     random2 = topTags(random2, n=NumOfTags, sort.by='none', adjust.method='fdr')$table$FDR <= 0.1,
+                     random3 = topTags(random3, n=NumOfTags, sort.by='none', adjust.method='fdr')$table$FDR <= 0.1)
+vennDiagram(vennCounts(significant), main='FDR=0.1')
+```
+
+# Writing up the results
+
+A large proportion of genes up- or downregulated in any population under the random regime is also regulated
+in at least one other population under the random regime. The first and third populations in the random regime
+are more similar among them. Population 2 being the one with more genes regulated by the selective regime is also
+the one with the largest proportion of exclusively regulated genes.
+
+I should save the results of the `glmQLFTest()` to run the functional analysis on the lists of regulated genes in
+a different session.
+
+```{r saving}
+save(randomness, random1, random2, random3, file = 'RegimeEffect_model7.RData')
+```

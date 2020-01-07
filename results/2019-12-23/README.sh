@@ -61,3 +61,10 @@
 if [ ! -e randomness.html ]; then
    R --save -q -e "rmarkdown::render('randomness.Rmd', ouptut_file='randomness.html')"
 fi
+
+# I used a new model that makes contrasts more easy to interpret. I do find
+# thousands of genes differentially expressed in any (or all) population under
+# the random regime, with respect to the populations in the regular regime. While
+# several genes seem to be up- or downregulated by the random regime in only one
+# or two of the three populations, there is much overlap in the response of
+# populations to the random environment.

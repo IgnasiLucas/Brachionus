@@ -26,6 +26,16 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2019-12-23
+I examine in more detail the effect of the random environment in gene expression. Here I take
+into account that not all populations respond in the same way to the selective regime. I fit a
+new model which makes contrasts easier to interprete. Then I determine what and how many genes
+are regulated in the random regime, relative to the regular one, individually in every population
+under the random regime, and also in all three of them simultaneously. While several genes may
+be regulated by the random environment in only one or two of the populations, most of the response
+to this regime is common in all three populations. See the detailed report 
+[here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-12-23/randomness.html)
+
 # 2019-07-26
 Use the R package topGO to run a functional enrichment analysis among the genes (or transcripts) that
 are differentially expressed between selective regimes or hatching conditions. Find rendered versions
