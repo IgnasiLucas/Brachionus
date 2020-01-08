@@ -33,8 +33,9 @@ new model which makes contrasts easier to interprete. Then I determine what and 
 are regulated in the random regime, relative to the regular one, individually in every population
 under the random regime, and also in all three of them simultaneously. While several genes may
 be regulated by the random environment in only one or two of the populations, most of the response
-to this regime is common in all three populations. See the detailed report 
-[here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-12-23/randomness.html)
+to this regime is common in all three populations. See the detailed report for either
+[genes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-12-23/genes/randomness.html)
+or [isoforms](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2019-12-23/isoforms/randomness.html).
 
 # 2019-07-26
 Use the R package topGO to run a functional enrichment analysis among the genes (or transcripts) that
