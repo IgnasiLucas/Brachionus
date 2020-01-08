@@ -12,7 +12,7 @@ library(topGO)
 In folder 2019-04-03 I produced the lists of genes and isoforms that underwent the differential
 expression analysis, with the fold change, the p-values, etc. In addition, some transcripts were
 annotated in folder 2019-07-19 with Gene Ontology terms. From that analysis, I produced here the
-lists of annotated genes and transcripts with there attributed GO terms. TopGO requires both the
+lists of annotated genes and transcripts with their attributed GO terms. TopGO requires both the
 genes (or transcripts) with an ordering criteria (e.g., p-value), and the annotation, which can
 be uploaded as a named list.
 

@@ -56,13 +56,23 @@
 # and hatching condition (FDR = 0.25). But even at FDR = 0.01, 3 genes show up
 # with at least one of the 4 terms of interaction between selective regime and
 # population significative. I need to inspect this more closely.
-#
 
-if [ ! -e randomness.html ]; then
-   R --save -q -e "rmarkdown::render('randomness.Rmd', ouptut_file='randomness.html')"
+if [ ! -d genes ]; then mkdir genes; fi
+if [ ! -e genes/randomness.html ]; then
+   R --no-save -q -e "rmarkdown::render('randomness_genes.Rmd', output_file='genes/randomness.html')"
 fi
 
-# I used a new model that makes contrasts more easy to interpret. I do find
+if [ ! -d isoforms ]; then mkdir isoforms; fi
+if [ ! -e isoforms/randomness.html ]; then
+   R --no-save -q -e "rmarkdown::render('randomness_isoforms.Rmd', output_file='isoforms/randomness.html')"
+fi
+
+# I used a new model:
+#
+#   model 7: ~ 0 + RegimePop + diapause
+#
+# where, RegimePop is the product factor of selective regime and original population,
+# with 6 levels. This model makes contrasts easier to interpret. I do find
 # thousands of genes differentially expressed in any (or all) population under
 # the random regime, with respect to the populations in the regular regime. While
 # several genes seem to be up- or downregulated by the random regime in only one

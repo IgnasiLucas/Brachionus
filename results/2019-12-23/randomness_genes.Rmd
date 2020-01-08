@@ -1,6 +1,6 @@
 ---
-title: "The effect of environmental randomness is population-specific"
-author: "Ignasi"
+title: "Population-specific effects of randomness on gene expression"
+author: "J. Ignacio Lucas Lledó"
 date: "23/12/2019"
 output: html_document
 ---
@@ -210,8 +210,21 @@ are more similar among them. Population 2 being the one with more genes regulate
 the one with the largest proportion of exclusively regulated genes.
 
 I should save the results of the `glmQLFTest()` to run the functional analysis on the lists of regulated genes in
-a different session.
+a different session. I think it's also good practice to save a plain text copy of the main tables, to allow
+inspection outside R.
 
 ```{r saving}
-save(randomness, random1, random2, random3, file = 'RegimeEffect_model7.RData')
+save(randomness, random1, random2, random3, file = 'genes/RegimeEffect_model7.RData')
+write.table(topTags(randomness, n=NumOfTags)[[1]],
+            file = 'genes/randomness.txt',
+            quote = FALSE)
+write.table(topTags(random1, n=NumOfTags)[[1]],
+            file = 'genes/random1.txt',
+            quote = FALSE)
+write.table(topTags(random2, n=NumOfTags)[[1]],
+            file = 'genes/random2.txt',
+            quote = FALSE)
+write.table(topTags(random3, n=NumOfTags)[[1]],
+            file = 'genes/random3.txt',
+            quote = FALSE)
 ```
