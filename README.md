@@ -26,6 +26,18 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-01-08
+Properly modelling the experiment as a split-plot design is actually possible with the R
+package `variancePartition`. Here I use it to analyse the proportion of variance of gene and
+isoform expression explained by selective regime and by hatching treatment after properly
+accounting for the random effect of the original population. I also use the `dream()` function
+to test for significant fixed effects. This analysis is preferred to the previous one, and
+will be used to generate the lists of genes and isoforms for functional analysis.
+
+The reports for [genes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-08/genes/mixed.html)
+and for [isoforms](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-08/isoforms/mixed.html)
+are available.
+
 # 2019-12-23
 I examine in more detail the effect of the random environment in gene expression. Here I take
 into account that not all populations respond in the same way to the selective regime. I fit a

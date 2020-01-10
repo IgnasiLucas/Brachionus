@@ -1,0 +1,111 @@
+---
+title: "Variance partition of gene expression in a split-plot design"
+author: "J. Ignacio Lucas Lledó"
+date: "9/1/2020"
+output: html_document
+---
+
+# Introduction
+The EdgeR package has the advantage of modelling count data, instead of normalized expression
+levels. It offers some capacity to fit complex models. But it does not include random effects.
+The experiment was a split-plot design, which requires a mixed model with the random effect of
+the original population of origin in order to properly account for the correlation of expression
+levels in sub-populations of the same origin.
+
+The `variancePartition` package fits mixed models to the expression data of every gene in the
+dataset. It also includes the `dream()` function to test for differential expression under this
+framework. It does require the expression level to be normalized, though.
+
+```{r setup}
+library(variancePartition)
+library(edgeR)
+library(BiocParallel)
+COUNTS_FILE <- '../2019-03-29/genes.PostCount.txt'
+NUM_THREADS <- 40  # Number of cores for parallelization.
+TAG <- 'genes'
+```
+
+# Variance partition
+When fitting the model to every gene's expression profile, information from all genes contribute to
+every fit. The shared information helps determine the dispersion of every measure. Counts are heteroscedastic:
+their variance depend on their mean. The exact mean-variance relationship may be complex, but it can
+be learned from the data. The `limma` package uses the `voom()` function to 1) transform count data to
+log2-counts per million, and to estimate the mean-variance relationship. Once that relationship is estimated,
+every expression level is assigned a *weight*: the inverse of its predicted variance. This weights account for
+the heteroscedasticity and are used afterwards in fitting the model and in testing for differential expression.
+
+Curiously, though, a model needs to be fit first, for every gene. The residual standard deviation and the
+average gene expression level of that fit are one point in the scatterplot where the mean-variance relationship
+becomes apparent. When fitting these gene-wise linear models, `voom()` does not consider random errors, but
+`voomWithDreamWeights()` does. 
+
+```{r data, cache=TRUE}
+counts <- as.matrix(read.table(COUNTS_FILE, row.names=1, header=TRUE))
+
+## Filtering
+# A gene is expressed if it has at least 5 reads, which in terms of CPM in the smallest
+# library is equal to `threshold`. Only genes expressed in at least 4 samples are retained.
+threshold <- 5 / (min(colSums(counts)) / 1000000)
+keep <- rowSums(cpm(counts) > threshold) >= 4
+geneExpr <- DGEList(counts[keep,])
+geneExpr <- calcNormFactors(geneExpr)
+
+## Metadata
+metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
+                                  "X3A_S9", "X3C_S11", "X4A_S6", "X4C_S12",
+                                  "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
+                       regime = c(1, 1, 1, 1, 0, 0 , 1, 1, 0, 0, 0, 0),
+                       regimeChar = c("random", "random", "random", "random",
+                                  "regular", "regular", "random", "random",
+                                  "regular", "regular", "regular", "regular"),
+                       population = c("1", "1", "2", "2", "3", "3",
+                                      "4", "4", "5", "5", "6", "6"),
+                       treatment = rep(c(0, 1), 6),
+                       treatmentChar = rep(c("hatch", "diapause"), 6))
+form <- ~ regime + treatment + (1|population)
+```
+
+The `variancePartition` package requires all categorical variables to be random effects. This is a way to prevent
+bias when estimating the variance component of categorical variables with many levels. However, the
+`dream()` function seems to require the variable to be tested be a fixed effect. To get out of this catch22,
+I dummy-code regime and treatment as numeric variables with values 0 and 1.
+
+```{r fits, cache=TRUE, warning=FALSE, message=FALSE}
+## Parallelization
+param = SnowParam(NUM_THREADS, "SOCK")
+register(param)
+
+## Weights
+vobjDream <- voomWithDreamWeights(geneExpr, form, metadata)
+
+## Variance partition
+varPart <- fitExtractVarPartModel(vobjDream, form, metadata)
+plotVarPart(varPart)
+plotPercentBars(varPart[1:20,])
+```
+
+Recall that the partition of variance shows relative amounts of variance explained by individual predictors,
+irrespectively of the absolute amount of variation. Thus, genes for which a large fraction of their expression
+variance is explained by the selective regime do not necessarily have large fold change values. Let's take a
+look at the stratified expression level of the gene with largest fraction of variance explained by regime:
+
+```{r stratified}
+i <- which.max(varPart$regime)
+
+# Expression level is log2 counts per million.
+GE <- data.frame(Expression = vobjDream$E[i,], Regime = metadata$regimeChar)
+plotStratify(Expression ~ Regime, GE, main = rownames(vobjDream$E)[i])
+```
+
+```{r dream, cache=TRUE}
+fitmm = dream( vobjDream, form, metadata )
+```
+
+# Session Info
+
+```{r sessioninfo}
+save(vobjDream, varPart, fitmm, file = paste(TAG, '.RData', sep=''))
+sessionInfo()
+```
+
+# References
