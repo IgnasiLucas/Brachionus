@@ -3,52 +3,55 @@ title: "Variance partition of isoform expression in a split-plot design"
 author: "J. Ignacio Lucas Lledó"
 date: "9/1/2020"
 output: html_document
+bibliography: mixed.bib
 ---
 
 # Introduction
-The EdgeR package has the advantage of modelling count data, instead of normalized expression
-levels. It offers some capacity to fit complex models. But it does not include random effects.
+The EdgeR package [@Robinson2010] has the advantage of modelling count data, instead of relative expression
+levels. It offers some capacity to fit complex models [@McCarthy2012]. But it does not include random effects.
 The experiment was a split-plot design, which requires a mixed model with the random effect of
 the original population of origin in order to properly account for the correlation of expression
 levels in sub-populations of the same origin.
 
-The `variancePartition` package fits mixed models to the expression data of every gene in the
-dataset. It also includes the `dream()` function to test for differential expression under this
+The `variancePartition` package [@Hoffman2016] fits mixed models to the expression data of every isoform in the
+dataset. It also includes the `dream()` function [Hoffman2020] to test for differential expression under this
 framework. It does require the expression level to be normalized, though.
 
-```{r setup}
+```{r setup, message=FALSE}
 library(variancePartition)
 library(edgeR)
 library(BiocParallel)
+library(cp4p)
 COUNTS_FILE <- '../2019-03-29/isoforms.PostCount.txt'
 NUM_THREADS <- 40  # Number of cores for parallelization.
 TAG <- 'isoforms'
 ```
 
 # Variance partition
-When fitting the model to every gene's expression profile, information from all genes contribute to
+When fitting the model to every isoform's expression profile, information from all isoforms contribute to
 every fit. The shared information helps determine the dispersion of every measure. Counts are heteroscedastic:
 their variance depend on their mean. The exact mean-variance relationship may be complex, but it can
-be learned from the data. The `limma` package uses the `voom()` function to 1) transform count data to
+be learned from the data. The `limma` package [@Ritchie2015] uses the `voom()` function [@Law2014] to 1) transform count data to
 log2-counts per million, and to estimate the mean-variance relationship. Once that relationship is estimated,
 every expression level is assigned a *weight*: the inverse of its predicted variance. This weights account for
 the heteroscedasticity and are used afterwards in fitting the model and in testing for differential expression.
 
-Curiously, though, a model needs to be fit first, for every gene. The residual standard deviation and the
-average gene expression level of that fit are one point in the scatterplot where the mean-variance relationship
-becomes apparent. When fitting these gene-wise linear models, `voom()` does not consider random errors, but
-`voomWithDreamWeights()` does. 
+Curiously, though, a model needs to be fit first, for every isoform. The residual standard deviation and the
+average isoform expression level of that fit is one point in the scatterplot where the mean-variance relationship
+becomes apparent. When fitting these isoform-wise linear models, `voom()` does not consider random errors, but
+`voomWithDreamWeights()` does.
 
 ```{r data, cache=TRUE}
 counts <- as.matrix(read.table(COUNTS_FILE, row.names=1, header=TRUE))
 
 ## Filtering
 # An isoform is expressed if it has at least 5 reads, which in terms of CPM in the smallest
-# library is equal to `threshold`. Only genes expressed in at least 4 samples are retained.
+# library is equal to `threshold`. Only isoforms expressed in at least 4 samples are retained.
 threshold <- 5 / (min(colSums(counts)) / 1000000)
 keep <- rowSums(cpm(counts) > threshold) >= 4
 geneExpr <- DGEList(counts[keep,])
 geneExpr <- calcNormFactors(geneExpr)
+numOfTags <- dim(geneExpr)[1]
 
 ## Metadata
 metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
@@ -62,7 +65,9 @@ metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
                                       "4", "4", "5", "5", "6", "6"),
                        treatment = rep(c(0, 1), 6),
                        treatmentChar = rep(c("hatch", "diapause"), 6))
-form <- ~ regime + treatment + (1|population)
+
+## Model (includes interaction term)
+form <- ~ regime * treatment + (1|population)
 ```
 
 The `variancePartition` package requires all categorical variables to be random effects. This is a way to prevent
@@ -95,10 +100,70 @@ i <- which.max(varPart$regime)
 # Expression level is log2 counts per million.
 GE <- data.frame(Expression = vobjDream$E[i,], Regime = metadata$regimeChar)
 plotStratify(Expression ~ Regime, GE, main = rownames(vobjDream$E)[i])
+rm(GE)
 ```
 
+Below I write the lists of isoforms with their fraction of expression variance explained by either selective
+regime or hatching condition. The isoforms are ordered from the one the expression of which is most affected
+by that variable to the one that is least affected. Note that among the top isoforms there will be both positive
+and negatively affected isoforms.
+
+```{r isoformLists}
+# Ordered by regime effect:
+head(varPart[order(varPart$regime, decreasing = TRUE),])
+write.table(varPart[order(varPart$regime, decreasing = TRUE),2],
+            file = paste(TAG, '/regime_variance.txt', sep=''), quote=FALSE,
+            row.names = TRUE, col.names = TRUE)
+
+# Order by hatching condition effect:
+head(varPart[order(varPart$treatment, decreasing=TRUE),])
+write.table(varPart[order(varPart$treatment, decreasing = TRUE),3],
+            file = paste(TAG, '/hatching_variance.txt', sep=''), quote = FALSE,
+            row.names = TRUE, col.names = TRUE)
+```
+
+# Differential expression
+
 ```{r dream, cache=TRUE}
-fitmm = dream( vobjDream, form, metadata )
+fitmm <- dream( vobjDream, form, metadata )
+head(fitmm$p.value)
+```
+
+The `estim.pi0` function of the `cp4p` package [@Gianetto2016] estimates the proportion of null hypothesis from a 
+list of p values. That is, it estimates the proportion of isoforms the expression of which is *not*
+affected by the corresponding factor.
+
+```{r pi0}
+pi0.regime <- estim.pi0(fitmm$p.value[,'regime'])
+pi0.regime
+pi0.treatment <- estim.pi0(fitmm$p.value[,'treatment'])
+pi0.treatment
+calibration.plot(fitmm$p.value[,'regime'], pi0.method='abh')
+calibration.plot(fitmm$p.value[,'treatment'], pi0.method='abh')
+```
+
+The `dream()` function uses a different, estimated number of degrees of freedom for every isoform, which
+makes t-statistics not directly comparable. The `write.fit()` function reports t-statistics and p-values
+for all coefficients. Below, I use `topTable()`, which transforms p-values in a signed z-score, which is usable
+for downstream analysis. Note that for the selective regime, a positive z-score (or a positive log-fold change)
+means the isoform is expressed more in the random than in the regular regime. And for the hatching condition
+(or *treatment* coefficient), positive z-score (or log-fold change) means that the isoform is expressed more
+under forced diapause (samples labelled with the *C* letter) than under immediate hatching.
+
+I doubt whether to separate up- and downregulated isoforms in opposite ends of the isoform list that will be used
+in functional enrichment analysis. It is clear that if a functional category contain isoforms both up- and downregulated,
+I may fail to identify that category as significant if I separate them [@Ackermann2009]. For the moment, I will use the
+p-value, rather than the z-score, to order isoforms, ignoring the sign of the effect. This will make the lists
+more comparable to those obtained from variance partition.
+
+```{r pvalue}
+regime_pvalue <- topTable(fitmm, coef = 'regime', number = numOfTags, sort.by = 'p')
+write.table(regime_pvalue[,'P.Value'], file = paste(TAG, '/regime_pvalue.txt', sep=''), quote = FALSE,
+            row.names = TRUE, col.names = TRUE)
+
+hatching_pvalue <- topTable(fitmm, coef = 'treatment', number = numOfTags, sort.by = 'p')
+write.table(hatching_pvalue[,'P.Value'], file = paste(TAG, '/hatching_pvalue.txt', sep=''), quote = FALSE,
+            row.names = TRUE, col.names = TRUE)
 ```
 
 # Session Info
