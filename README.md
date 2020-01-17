@@ -26,6 +26,17 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-01-14
+Here I determine what gene ontology terms are associated with differential expression between
+selective regimes, and between hatching conditions. Hatching condition did not affect many genes,
+and a gene set enrichment analysis seems unnecessary in this case. However, for the sake of
+completion, I report results for the following:
+
+  * Genes differentially expressed between selective [regimes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-14/genes/regime/enrichment.html).
+  * Genes differentially expressed between hatching [conditions](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-14/genes/hatching/enrichment.html).
+  * Isoforms (or transcripts) differentially expressed between selective [regimes](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-14/isoforms/regime/enrichment.html).
+  * Isoforms (or transcripts) differentially expressed between hatching [conditions](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-14/isoforms/regime/enrichment.html).
+
 # 2020-01-08
 Properly modelling the experiment as a split-plot design is actually possible with the R
 package `variancePartition`. Here I use it to analyse the proportion of variance of gene and
