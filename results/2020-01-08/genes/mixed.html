@@ -443,7 +443,7 @@ head(varPart[order(varPart$regime, decreasing = TRUE),])</code></pre>
 ## XLOC_033378 0.000000000 0.9101411 0.0001857891 0.08967307
 ## XLOC_008704 0.000000000 0.9096406 0.0004009025 0.08995854
 ## XLOC_014724 0.020415734 0.9069108 0.0193341950 0.05333932</code></pre>
-<pre class="r"><code>write.table(varPart[order(varPart$regime, decreasing = TRUE),2],
+<pre class="r"><code>write.table(varPart[order(varPart$regime, decreasing = TRUE), 'regime', drop=FALSE],
             file = paste(TAG, '/regime_variance.txt', sep=''), quote=FALSE,
             row.names = TRUE, col.names = TRUE)
 
@@ -456,7 +456,7 @@ head(varPart[order(varPart$treatment, decreasing=TRUE),])</code></pre>
 ## XLOC_037897 0.00000000 0.03363773 0.6947592 0.27160308
 ## XLOC_027298 0.00000000 0.05032057 0.6873720 0.26230746
 ## XLOC_027320 0.00000000 0.16752482 0.6868949 0.14558026</code></pre>
-<pre class="r"><code>write.table(varPart[order(varPart$treatment, decreasing = TRUE),3],
+<pre class="r"><code>write.table(varPart[order(varPart$treatment, decreasing = TRUE), 'treatment', drop=FALSE],
             file = paste(TAG, '/hatching_variance.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)</code></pre>
 </div>
@@ -510,13 +510,13 @@ pi0.treatment</code></pre>
 ## $unif.under
 ## [1] 0.141091</code></pre>
 <p>The <code>dream()</code> function uses a different, estimated number of degrees of freedom for every gene, which makes t-statistics not directly comparable. The <code>write.fit()</code> function reports t-statistics and p-values for all coefficients. Below, I use <code>topTable()</code>, which transforms p-values in a signed z-score, which is usable for downstream analysis. Note that for the selective regime, a positive z-score (or a positive log-fold change) means the gene is expressed more in the random than in the regular regime. And for the hatching condition (or <em>treatment</em> coefficient), positive z-score (or log-fold change) means that the gene is expressed more under forced diapause (samples labelled with the <em>C</em> letter) than under immediate hatching.</p>
-<p>I doubt whether to separate up- and downregulated genes in opposite ends of the gene list that will be used in functional enrichment analysis. It is clear that if a functional category contain genes both up- and downregulated, I may fail to identify that category as significant if I separate them <span class="citation">(<span class="citeproc-not-found" data-reference-id="Ackermann2009"><strong>???</strong></span>)</span>. For the moment, I will use the p-value, rather than the z-score, to order genes, ignoring the sign of the effect. This will make the lists more comparable to those obtained from variance partition.</p>
+<p>I doubt whether to separate up- and downregulated genes in opposite ends of the gene list that will be used in functional enrichment analysis. It is clear that if a functional category contain genes both up- and downregulated, I may fail to identify that category as significant if I separate them <span class="citation">(Ackermann and Strimmer 2009)</span>. For the moment, I will use the p-value, rather than the z-score, to order genes, ignoring the sign of the effect. This will make the lists more comparable to those obtained from variance partition.</p>
 <pre class="r"><code>regime_pvalue &lt;- topTable(fitmm, coef = 'regime', number = numOfTags, sort.by = 'p')
-write.table(regime_pvalue[,'P.Value'], file = paste(TAG, '/regime_pvalue.txt', sep=''), quote = FALSE,
+write.table(regime_pvalue[,'P.Value',drop=FALSE], file = paste(TAG, '/regime_pvalue.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)
 
 hatching_pvalue &lt;- topTable(fitmm, coef = 'treatment', number = numOfTags, sort.by = 'p')
-write.table(hatching_pvalue[,'P.Value'], file = paste(TAG, '/hatching_pvalue.txt', sep=''), quote = FALSE,
+write.table(hatching_pvalue[,'P.Value',drop=FALSE], file = paste(TAG, '/hatching_pvalue.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)</code></pre>
 </div>
 <div id="session-info" class="section level1">
@@ -573,6 +573,9 @@ sessionInfo()</code></pre>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>
 <div id="refs" class="references">
+<div id="ref-Ackermann2009">
+<p>Ackermann, Marit, and Korbinian Strimmer. 2009. “A General Modular Framework for Gene Set Enrichment Analysis.” <em>BMC Bioinformatics</em> 10: 47. <a href="https://doi.org/10.1186/1471-2105-10-47">https://doi.org/10.1186/1471-2105-10-47</a>.</p>
+</div>
 <div id="ref-Gianetto2016">
 <p>Giai Gianetto, Quentin, Florence Combes, Claire Ramus, Christophe Bruley, Yohann Couté, and Thomas Burger. 2016. “Calibration Plot for Proteomics: A Graphical Tool to Visually Check the Assumptions Underlying FDR Control in Quantitative Experiments.” <em>PROTEOMICS</em> 16 (1): 29–32. <a href="https://doi.org/10.1002/pmic.201500189">https://doi.org/10.1002/pmic.201500189</a>.</p>
 </div>

@@ -111,13 +111,13 @@ and negatively affected genes.
 ```{r geneLists}
 # Ordered by regime effect:
 head(varPart[order(varPart$regime, decreasing = TRUE),])
-write.table(varPart[order(varPart$regime, decreasing = TRUE),2],
+write.table(varPart[order(varPart$regime, decreasing = TRUE), 'regime', drop=FALSE],
             file = paste(TAG, '/regime_variance.txt', sep=''), quote=FALSE,
             row.names = TRUE, col.names = TRUE)
 
 # Order by hatching condition effect:
 head(varPart[order(varPart$treatment, decreasing=TRUE),])
-write.table(varPart[order(varPart$treatment, decreasing = TRUE),3],
+write.table(varPart[order(varPart$treatment, decreasing = TRUE), 'treatment', drop=FALSE],
             file = paste(TAG, '/hatching_variance.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)
 ```
@@ -158,11 +158,11 @@ more comparable to those obtained from variance partition.
 
 ```{r pvalue}
 regime_pvalue <- topTable(fitmm, coef = 'regime', number = numOfTags, sort.by = 'p')
-write.table(regime_pvalue[,'P.Value'], file = paste(TAG, '/regime_pvalue.txt', sep=''), quote = FALSE,
+write.table(regime_pvalue[,'P.Value',drop=FALSE], file = paste(TAG, '/regime_pvalue.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)
 
 hatching_pvalue <- topTable(fitmm, coef = 'treatment', number = numOfTags, sort.by = 'p')
-write.table(hatching_pvalue[,'P.Value'], file = paste(TAG, '/hatching_pvalue.txt', sep=''), quote = FALSE,
+write.table(hatching_pvalue[,'P.Value',drop=FALSE], file = paste(TAG, '/hatching_pvalue.txt', sep=''), quote = FALSE,
             row.names = TRUE, col.names = TRUE)
 ```
 
