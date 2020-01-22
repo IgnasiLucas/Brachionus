@@ -10,10 +10,12 @@ params:
 ```{r setup, message=FALSE}
 library(topGO)
 library(knitr)   # to use kable()
-ANNOTATION <- list(genes = '../2019-07-26/genes/annotation.txt',
-                   isoforms = '../2019-07-26/transcripts/annotation.txt')
+library(limma)   # to use vennDiagram()
+library(ggplot2)
 TAG <- params$TAG
 VAR <- params$VAR
+ANNOTATION <- list(genes = '../2019-07-26/genes/annotation.txt',
+                   isoforms = '../2019-07-26/transcripts/annotation.txt')
 TAGDIR <- paste0('../2020-01-08/', TAG, '/')
 ```
 
@@ -29,7 +31,7 @@ of the differential expression between levels of `r VAR`, which does depend on f
 Functional annotation is in `2019-07-26`. I will also upload two lists of `r TAG`, with either proportion of
 variance explained by `r VAR` or p-value of differential expression test.
 
-```{r data, cache=TRUE}
+```{r data}
 tagVariance <- read.table(paste0(TAGDIR, VAR, '_variance.txt'))
 tagPValue   <- read.table(paste0(TAGDIR, VAR, '_pvalue.txt'))
 annotation  <- read.table(ANNOTATION[[TAG]], col.names = c('tagname', 'goterms'))
@@ -50,7 +52,7 @@ There are `r length(Variance)` `r TAG` scored with a variance portion and a diff
 It should actually be the exact same `r TAG`.
 The `annotation` data frame has more than one GO term for every tag, separated by `|`. I need a named list.
 
-```{r}
+```{r annotation}
 head(annotation)
 allgenes2GO <- strsplit(as.character(annotation$goterms), "|", fixed = TRUE)
 names(allgenes2GO) <- annotation$tagname
@@ -64,7 +66,7 @@ differentially expressed, I should attribute a GO term to them. According to [ht
 nowadays we express lack of annotation by annotating to the root nodes, i.e. GO:0008150 biological_process,
 GO:0003674 molecular_function, and GO:0005575 cellular_component.
 
-```{r }
+```{r unknown}
 for (tag in unique(c(names(PValues), names(Variance)))) {
    if (! tag %in% names(allgenes2GO)) {
       allgenes2GO <- append(allgenes2GO,
@@ -90,7 +92,7 @@ which have less than `n` annotated genes.
 
 I generate three datasets, to analyse each of the three ontologies.
 
-```{r results = 'hold', message = FALSE}
+```{r GOdata1, results = 'hold', message = FALSE}
 selection <- function(allScores) {return(allScores < 0.05)}
 GOdata.BP <- new('topGOdata',
    description = 'Differential expression among Brachionus plicatilis populations.',
@@ -119,7 +121,6 @@ GOdata.CC <- new('topGOdata',
    geneSelectionFun = selection,
    nodeSize = 5)
 
-library(knitr)
 DataSummary <- data.frame(ontology = c('BP', 'MF', 'CC'),
    Num_Genes = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), numGenes),
    Num_GO_terms = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), function(x) length(usedGO(x))))
@@ -139,7 +140,7 @@ algorithm, which treats GO nodes as independent, and therefore produces an exces
 results. I will not use the Fisher's exact test, because it dependes on an arbitrary threshold
 of significance on non-adjusted p-values.
 
-```{r results = 'asis', message = FALSE}
+```{r testing1, message = FALSE}
 BP.elim     <- runTest(GOdata.BP, algorithm = "elim",     statistic = "ks")
 BP.weight01 <- runTest(GOdata.BP, algorithm = "weight01", statistic = "ks")
 BP.lea      <- runTest(GOdata.BP, algorithm = "lea",      statistic = "ks")
@@ -161,16 +162,25 @@ rm(ResultsSummary)
 
 ## Results
 
-Curiously, topGO does not pay much attention to what terms are significant because they are
-*over*represented and which ones are *under*represented. I think it's worth separating them,
-to facilitate the biological interpretation. Note that not all terms listed in the tables
-below are significant. The scores for the three methods (elim, weight01 and lea) are non-corrected
-p-values.
+The `topGO` package does not pay much attention to what terms are significant because they are
+*over*represented and which ones are *under*represented among the most differentially expressed
+genes. I think it's worth separating them, to facilitate the biological interpretation. Note 
+that not all terms listed in the tables below are significant. The scores for the three methods
+(elim, weight01 and lea) are non-corrected p-values.
 
-```{r message = FALSE, results='asis'}
-BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
-MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
-CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
+### Biological process
+
+```{r BP1, message=FALSE}
+orderedTerms <- names(sort(score(BP.weight01)))
+significant.weight01 <- score(BP.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(BP.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(BP.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+BP.pvalue.sigTerms <- sigTerms
+
+BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 
 kable(
    BP.all[BP.all$Significant > BP.all$Expected,],
@@ -180,6 +190,47 @@ kable(
    BP.all[BP.all$Significant < BP.all$Expected,],
    caption = "Most under-represented terms of the Biological Process ontology.")
 
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term = Term(GOTERM[sigTerms]),
+                 Definition = Definition(GOTERM[sigTerms]),
+                 PValue=score(BP.weight01)[sigTerms]),
+      caption = paste('Biological process terms significantly associated with',
+                      VAR, 'according to all 3 algorithms', sep=' '))
+```
+
+I think the GO graph is useful to see the relationship among the significant terms. But
+too large graphs are impossible to read. I don't know how to split the graph in meaningful
+subgraphs.
+
+```{r BP1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.BP, score(BP.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+This is just a example of the most significant GO term:
+
+```{r BP1density, message=FALSE}
+showGroupDensity(GOdata.BP, names(score(BP.weight01))[which.min(score(BP.weight01))])
+```
+
+### Molecular function
+
+```{r MF1, message=FALSE}
+orderedTerms <- names(sort(score(MF.weight01)))
+significant.weight01 <- score(MF.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(MF.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(MF.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+MF.pvalue.sigTerms <- sigTerms
+
+MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+
 kable(
    MF.all[MF.all$Significant > MF.all$Expected,],
    caption = "Most over-represented terms of the Molecular Function ontology.")
@@ -188,6 +239,40 @@ kable(
    MF.all[MF.all$Significant < MF.all$Expected,],
    caption = "Most under-represented terms of the Molecular Function ontology.")
 
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(MF.weight01)[sigTerms]),
+      caption = paste('Molecular function terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r MF1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.MF, score(MF.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+```{r MF1density, message=FALSE}
+showGroupDensity(GOdata.MF, names(score(MF.weight01))[which.min(score(MF.weight01))])
+```
+
+### Cellular component
+
+```{r CC1, message=FALSE}
+orderedTerms <- names(sort(score(CC.weight01)))
+significant.weight01 <- score(CC.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(CC.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(CC.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+CC.pvalue.sigTerms <- sigTerms
+
+CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 kable(
    CC.all[CC.all$Significant > CC.all$Expected,],
    caption = "Most over-represented terms of the Cellular Component ontology.")
@@ -195,21 +280,47 @@ kable(
 kable(
    CC.all[CC.all$Significant < CC.all$Expected,],
    caption = "Most under-represented terms of the Cellular Component ontology.")
+
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(CC.weight01)[sigTerms]),
+      caption = paste('Cellular component terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r CC1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.CC, score(CC.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+```{r CC1density, message=FALSE}
+showGroupDensity(GOdata.CC, names(score(CC.weight01))[which.min(score(CC.weight01))])
 ```
 
 # Using the portion of variance explained by `r VAR`
 ## Building the topGO object
 
-I need to generate the topGO objects again, using the alternative gene ordering. Here, I define the *interesting*
-set of `r TAG` as the 10% with highest portion of variance explained by `r VAR`. I believe setting this function
-is irrelevant when not using Fisher's test, anyways.
+I need to generate the topGO objects again, using the alternative gene ordering, based
+on the proportion of expression-level variance explained by `r VAR`. I miss a way to
+inform the `topGOdata` object that the score in this case is reversed, with respect to
+p-values: the higher it is, the more differentially expressed the gene is. To make sure
+that GO terms are tested in the same way than when using p-values, I will just reverse
+the proportion of variance explained by `r VAR` to its complement. Taking this into
+account, the subset of *interesting* genes (`selection()` function) must be defined as
+the lowest 10% scores, which are the 10% genes with largest portion of variance explained
+by `r VAR`.
 
-```{r results = 'hold', message = FALSE}
-selection <- function(allScores) {return(allScores >= quantile(allScores, probs = 0.90))}
+```{r GOdata2, results = 'hold', message = FALSE}
+selection <- function(allScores) {return(allScores <= quantile(allScores, probs = 0.10))}
 GOdataVar.BP <- new('topGOdata',
    description = 'Differential expression among Brachionus plicatilis populations.',
    ontology = 'BP', 
-   allGenes = Variance,
+   allGenes = 1.0 - Variance,
    annot = annFUN.gene2GO,
    gene2GO = allgenes2GO,
    geneSelectionFun = selection,
@@ -218,7 +329,7 @@ GOdataVar.BP <- new('topGOdata',
 GOdataVar.MF <- new('topGOdata',
    description = 'Differential expression among Brachionus plicatilis populations.',
    ontology = 'MF',
-   allGenes = Variance,
+   allGenes = 1.0 - Variance,
    annot = annFUN.gene2GO,
    gene2GO = allgenes2GO,
    geneSelectionFun = selection,
@@ -227,7 +338,7 @@ GOdataVar.MF <- new('topGOdata',
 GOdataVar.CC <- new('topGOdata',
    description = 'Differential expression among Brachionus plicatilis populations.',
    ontology = 'CC',
-   allGenes = Variance,
+   allGenes = 1.0 - Variance,
    annot = annFUN.gene2GO,
    gene2GO = allgenes2GO,
    geneSelectionFun = selection,
@@ -243,7 +354,7 @@ rm(DataSummary)
 
 ## Running the tests
 
-```{r results = 'asis', message = FALSE}
+```{r testing2, message = FALSE}
 BPvar.elim     <- runTest(GOdataVar.BP, algorithm = "elim",     statistic = "ks")
 BPvar.weight01 <- runTest(GOdataVar.BP, algorithm = "weight01", statistic = "ks")
 BPvar.lea      <- runTest(GOdataVar.BP, algorithm = "lea",      statistic = "ks")
@@ -264,11 +375,19 @@ rm(ResultsSummary)
 ```
 
 ## Results
+### Biological process
 
-```{r message = FALSE, results='asis'}
-BPvar.all <- GenTable(GOdataVar.BP, elim=BPvar.elim, weight01=BPvar.weight01, lea=BPvar.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
-MFvar.all <- GenTable(GOdataVar.MF, elim=MFvar.elim, weight01=MFvar.weight01, lea=MFvar.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
-CCvar.all <- GenTable(GOdataVar.CC, elim=CCvar.elim, weight01=CCvar.weight01, lea=CCvar.lea, orderBy="elim", ranksOf="weight01", topNodes=50)
+```{r BP2, message=FALSE}
+orderedTerms <- names(sort(score(BPvar.weight01)))
+significant.weight01 <- score(BPvar.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(BPvar.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(BPvar.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+BP.variance.sigTerms <- sigTerms
+
+BPvar.all <- GenTable(GOdataVar.BP, elim=BPvar.elim, weight01=BPvar.weight01, lea=BPvar.lea,
+                      orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 
 kable(
    BPvar.all[BPvar.all$Significant > BPvar.all$Expected,],
@@ -278,6 +397,43 @@ kable(
    BPvar.all[BPvar.all$Significant < BPvar.all$Expected,],
    caption = "Most under-represented terms of the Biological Process ontology.")
 
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(BPvar.weight01)[sigTerms]),
+      caption = paste('Biological process terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r BP2dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdataVar.BP, score(BPvar.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+Below I plot variance portion, but for the termo found most significant when using
+p-values, for comparison.
+
+```{r BP2density, message=FALSE}
+showGroupDensity(GOdataVar.BP, names(score(BP.weight01))[which.min(score(BP.weight01))])
+```
+
+### Molecular function
+
+```{r MF2, message=FALSE}
+orderedTerms <- names(sort(score(MFvar.weight01)))
+significant.weight01 <- score(MFvar.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(MFvar.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(MFvar.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+MF.variance.sigTerms <- sigTerms
+
+MFvar.all <- GenTable(GOdataVar.MF, elim=MFvar.elim, weight01=MFvar.weight01, lea=MFvar.lea,
+                      orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 kable(
    MFvar.all[MFvar.all$Significant > MFvar.all$Expected,],
    caption = "Most over-represented terms of the Molecular Function ontology.")
@@ -286,6 +442,46 @@ kable(
    MFvar.all[MFvar.all$Significant < MFvar.all$Expected,],
    caption = "Most under-represented terms of the Molecular Function ontology.")
 
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(MFvar.weight01)[sigTerms]),
+      caption = paste('Molecular functions terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r MF2dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdataVar.MF, score(MFvar.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+I plot variance portion, but for the term found most significant when using p-values, for comparison.
+
+```{r MF2density, message=FALSE}
+showGroupDensity(GOdataVar.MF, names(score(MF.weight01))[which.min(score(MF.weight01))])
+```
+
+### Cellular component
+
+```{r CC2, message=FALSE}
+orderedTerms <- names(sort(score(CCvar.weight01)))
+significant.weight01 <- score(CCvar.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(CCvar.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(CCvar.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+if (length(sigTerms) == 0) {
+   sigTerms <- orderedTerms[significant.lea & significant.elim]
+}
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+CC.variance.sigTerms <- sigTerms
+
+CCvar.all <- GenTable(GOdataVar.CC, elim=CCvar.elim, weight01=CCvar.weight01, lea=CCvar.lea,
+                      orderBy="weight01", ranksOf="elim", topNodes=max(sum(significant.elim), 10))
+
 kable(
    CCvar.all[CCvar.all$Significant > CCvar.all$Expected,],
    caption = "Most over-represented terms of the Cellular Component ontology.")
@@ -293,4 +489,86 @@ kable(
 kable(
    CCvar.all[CCvar.all$Significant < CCvar.all$Expected,],
    caption = "Most under-represented terms of the Cellular Component ontology.")
+
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(CCvar.weight01)[sigTerms]),
+      caption = paste('Cellular component terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r CC2dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdataVar.CC, score(CCvar.weight01),
+               firstSigNodes = sum(significant.weight01),
+               wantedNodes = sigTerms)
+```
+
+For comparison, I plot the distribution of variance portion for the CC term found most significant when using p-values.
+
+```{r CC2density, message=FALSE}
+showGroupDensity(GOdataVar.CC, names(score(CC.weight01))[which.min(score(CC.weight01))])
+```
+
+# Comparison between the two ordering of genes.
+## Biological process
+
+```{r BPcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.BP)
+vennDiagram(vennCounts(cbind(PValue   = allTerms %in% BP.pvalue.sigTerms,
+                             Variance = allTerms %in% BP.variance.sigTerms)))
+
+ggplot(data = data.frame(PValue   = rank(score(BP.weight01))[allTerms],
+                         Variance = rank(score(BPvar.weight01))[allTerms]),
+       mapping = aes(x = PValue, y = Variance)) +
+   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   ylab('Using portion of explained variance') +
+   ggtitle('Ordering of BP terms by significance')
+```
+
+## Molecular function
+
+```{r MFcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.MF)
+vennDiagram(vennCounts(cbind(PValue   = allTerms %in% MF.pvalue.sigTerms,
+                             Variance = allTerms %in% MF.variance.sigTerms)))
+
+ggplot(data = data.frame(PValue   = rank(score(MF.weight01))[allTerms],
+                         Variance = rank(score(MFvar.weight01))[allTerms]),
+       mapping = aes(x = PValue, y = Variance)) +
+   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   ylab('Using portion of explained variance') +
+   ggtitle('Ordering of MF terms by significance')
+```
+
+## Cellular component
+
+```{r CCcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.CC)
+vennDiagram(vennCounts(cbind(PValue   = allTerms %in% CC.pvalue.sigTerms,
+                             Variance = allTerms %in% CC.variance.sigTerms)))
+
+ggplot(data = data.frame(PValue   = rank(score(CC.weight01))[allTerms],
+                         Variance = rank(score(CCvar.weight01))[allTerms]),
+       mapping = aes(x = PValue, y = Variance)) +
+   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   ylab('Using portion of explained variance') +
+   ggtitle('Ordering of CC terms by significance')
+```
+
+# Session info
+I save the main variables to be able to load them in a new R session later.
+```{r last}
+save(allgenes2GO,
+     GOdata.BP, BP.elim, BP.weight01, BP.lea, BP.pvalue.sigTerms,
+     GOdata.MF, MF.elim, MF.weight01, MF.lea, MF.pvalue.sigTerms,
+     GOdata.CC, CC.elim, CC.weight01, CC.lea, CC.pvalue.sigTerms,
+     GOdataVar.BP, BPvar.elim, BPvar.weight01, BPvar.lea, BP.variance.sigTerms,
+     GOdataVar.MF, MFvar.elim, MFvar.weight01, MFvar.lea, MF.variance.sigTerms,
+     GOdataVar.CC, CCvar.elim, CCvar.weight01, CCvar.lea, CC.variance.sigTerms,
+     file = paste('Enrichment', TAG, VAR, 'RData', sep='.'))
+sessionInfo()
 ```
