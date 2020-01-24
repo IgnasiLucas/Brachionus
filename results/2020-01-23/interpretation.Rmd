@@ -1,0 +1,105 @@
+---
+title: "Cell functions affected by environmental unpredictability"
+author: "J. Ignacio Lucas Lledó"
+date: "23/1/2020"
+output: html_document
+bibliography: interpretation.bib
+---
+
+```{r hide, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+On `2020-01-14` I run the analysis of Gene Ontology terms. Here I want to focus on part of those results and make some findings
+clearer. I will use results only from gene annotation, and not from annotation of transcripts, which is a somewhat noiser dataset.
+I will not look at the functions affected by hatching condition, since it only affects a couple of genes, to be inspected later.
+Among all cellular functions significantly enriched with genes differentially expressed among selective regimes, I will focus
+on those that are most significant, and detailed enough. For example, I skip terms like *transmembrane transport*, *proteolysis*
+or *protein phosphorylation*, because they are too general. Sections below are named for the functional categories that I think
+are worth discussing. I will try to contextualize the results. My entry point to the literature is [GarciaRoger2019].
+
+I need the results of the differential expression analysis (`2020-01-08`) to identify the genes annotated with the significant
+GO terms, and to assess the direction of gene expression change between selective regimes.
+
+```{r setup}
+library(variancePartition)
+library(GO.db)
+library(ggplot2)
+library(tidyr)
+ANNOTATION <- '../2019-07-26/genes/annotation.txt'
+EXPRESSION <- '../2020-01-08/genes.RData'   # Includes the variance partition and the mixed models fitted with dream()
+```
+
+```{r data}
+annotation <- read.table(ANNOTATION, col.names = c('gene', 'GOterms'), colClasses = c('character', 'character'))
+head(annotation)
+
+load(EXPRESSION)
+ls()
+head(varPart)
+metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
+                                  "X3A_S9", "X3C_S11", "X4A_S6", "X4C_S12",
+                                  "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
+                       regime = c(1, 1, 1, 1, 0, 0 , 1, 1, 0, 0, 0, 0),
+                       regimeChar = c("random", "random", "random", "random",
+                                  "regular", "regular", "random", "random",
+                                  "regular", "regular", "regular", "regular"),
+                       population = c("1", "1", "2", "2", "3", "3",
+                                      "4", "4", "5", "5", "6", "6"),
+                       treatment = rep(c(0, 1), 6),
+                       treatmentChar = rep(c("hatch", "diapause"), 6))
+```
+
+
+# Biological processes
+## Nucleotide-excision repair
+This is term **GO:0006289**. It is among the most significantly enriched terms, with only 13 genes annotated.
+
+```{r NER}
+goterm <- 'GO:0006289'
+plotPercentBars(varPart[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'], ])
+z <- as.data.frame(vobjDream$E[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'],])
+z$gene <- row.names(z)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor(NA, levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+GE[GE$sample %in% c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"), 'regime'] <- 'regular'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+## G protein-coupled receptor signaing pathway, and signal transduction
+
+```{r Gprotein}
+goterm <- 'GO:0006289'
+plotPercentBars(varPart[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'], ])
+z <- as.data.frame(vobjDream$E[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'],])
+z$gene <- row.names(z)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor(NA, levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+GE[GE$sample %in% c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"), 'regime'] <- 'regular'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+## Cell-matrix adhesion
+
+## Potassium ion transport, carboxylic acid transport, and ion transmembrane transport
+
+## Cillium movement and cillium assembly
+
+## Proteasome-mediated ubiquitin-dependent protein catabolic process
+
+## Response to oxidative stress
+
+# Molecular functions
+## Motor activity
+
+## Peptidase activities: metallocarboxypeptidase activity, metalloendopeptidase activity, serine-type endopeptidase activity and calcium-dependent cysteine-type endopeptidase activity
+
+## oxidoreductase activity, acting on paired donors, with incorporation or reduction of molecular oxygen, reduced ascorbate as one donor, and incorporation of one atom of oxygen
+
+# Session info
+
+# References
