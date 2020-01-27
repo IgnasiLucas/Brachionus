@@ -23,7 +23,7 @@ are worth discussing. I will try to contextualize the results. My entry point to
 I need the results of the differential expression analysis (`2020-01-08`) to identify the genes annotated with the significant
 GO terms, and to assess the direction of gene expression change between selective regimes.
 
-```{r setup}
+```{r setup, message=FALSE}
 library(variancePartition)
 library(GO.db)
 library(ggplot2)
@@ -32,26 +32,31 @@ ANNOTATION <- '../2019-07-26/genes/annotation.txt'
 EXPRESSION <- '../2020-01-08/genes.RData'   # Includes the variance partition and the mixed models fitted with dream()
 ```
 
+The annotation table includes only the most specific terms that can be assigned to a
+gene. The more general, ancestor terms are assumed, of course, but not explicitly
+mentioned in the annotation. For the purpose of retrieving all genes annotated to a
+term, I need to expand the annotation, to make ancestor terms explicit. It took me a
+while to realize that I can do this with the `unlist()` function:
+
 ```{r data}
 annotation <- read.table(ANNOTATION, col.names = c('gene', 'GOterms'), colClasses = c('character', 'character'))
 head(annotation)
+annotation.list <- strsplit(annotation$GOterms, split='|', fixed=TRUE)
+names(annotation.list) <- annotation$gene
+# append can only join two vectors at a time. It works with lists!
+allAncestors <- append(as.list(GOBPANCESTOR),
+                       append(as.list(GOMFANCESTOR),
+                              as.list(GOCCANCESTOR)))
 
+fullAnnotation <- lapply(annotation.list,
+                         FUN = function(x){
+                           unique(append(x,
+                                         unlist(allAncestors[x], use.names=FALSE)))
+                         })
 load(EXPRESSION)
 ls()
 head(varPart)
-metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
-                                  "X3A_S9", "X3C_S11", "X4A_S6", "X4C_S12",
-                                  "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
-                       regime = c(1, 1, 1, 1, 0, 0 , 1, 1, 0, 0, 0, 0),
-                       regimeChar = c("random", "random", "random", "random",
-                                  "regular", "regular", "random", "random",
-                                  "regular", "regular", "regular", "regular"),
-                       population = c("1", "1", "2", "2", "3", "3",
-                                      "4", "4", "5", "5", "6", "6"),
-                       treatment = rep(c(0, 1), 6),
-                       treatmentChar = rep(c("hatch", "diapause"), 6))
 ```
-
 
 # Biological processes
 ## Nucleotide-excision repair
@@ -59,8 +64,14 @@ This is term **GO:0006289**. It is among the most significantly enriched terms, 
 
 ```{r NER}
 goterm <- 'GO:0006289'
-plotPercentBars(varPart[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'], ])
-z <- as.data.frame(vobjDream$E[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'],])
+genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
+# Not all genes annotated have been used in expression analysis
+genes <- genes[genes %in% row.names(varPart)]
+plotPercentBars(varPart[genes,])
+
+topTable(fitmm, coef='regime', number=length(fitmm$F))[genes,]
+
+z <- as.data.frame(vobjDream$E[genes,])
 z$gene <- row.names(z)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor(NA, levels=c('regular', 'random'))
@@ -72,20 +83,96 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplo
 ## G protein-coupled receptor signaing pathway, and signal transduction
 
 ```{r Gprotein}
-goterm <- 'GO:0006289'
-plotPercentBars(varPart[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'], ])
-z <- as.data.frame(vobjDream$E[annotation[grep(goterm, annotation$GOterms, fixed=TRUE), 'gene'],])
+goterm <- 'GO:0007186'
+genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
+genes <- genes[genes %in% row.names(varPart)]
+# I subset varPart and at the same time order the selected rows by 'regime', and the columns in the order desired.
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+
+z <- as.data.frame(vobjDream$E[genes,])
 z$gene <- row.names(z)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor(NA, levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
 GE[GE$sample %in% c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"), 'regime'] <- 'regular'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + ggtitle(Term(GOTERM[goterm]))
 ```
+
+Among the `r length(genes)` genes in this category, `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'adj.P.Val'] <= 0.1)`
+have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with this function to plot all their stratified expression levels.
+I select the most differentially expressed ones.
+
+```{r G2, fig.width=15, fig.height=20}
+z <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z <- z[row.names(z) %in% genes, ]   # gene order is preserved:
+head(z)
+genes <- head(row.names(z), n=50)
+GE <- GE[GE$gene %in% genes,]
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
+      facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+Among the top `r length(genes)` genes analysed from the G protein-coupled receptor signaling pathway,
+`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] < 0)`
+have a reduced expression level in the unpredictable environment, and
+`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
+show an increased expression level.
 
 ## Cell-matrix adhesion
 
+```{r adhesion}
+goterm <- 'GO:0007160'
+genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
+genes <- genes[genes %in% row.names(varPart)]
+plotPercentBars(varPart[genes,])
+
+topTable(fitmm, coef='regime', number=length(fitmm$F))[genes,]  # not ordered by p-value
+
+z <- as.data.frame(vobjDream$E[genes,])
+z$gene <- row.names(z)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor('regular', levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+Among the top `r length(genes)` genes involved in `r Term(GOTERM[goterm])`, 
+`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] < 0)`
+have a reduced expression level in the unpredictable environment, and
+`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
+show an increased expression level.
+
 ## Potassium ion transport, carboxylic acid transport, and ion transmembrane transport
+Several functions related to ion transport are significant. I wonder to what extent their significance is not
+dependent on a common subset of genes.
+
+```{r independence}
+goterm_K <- 'GO:0006813'
+goterm_COOH <- 'GO:0046942'
+goterm_Sulf <- 'GO:0008272'
+goterm_Nucl <- 'GO:1901642'
+goterm_TM   <- 'GO:0034220'
+
+genes_K    <- names(fullAnnotation[grep(goterm_K,    fullAnnotation, fixed=TRUE)])
+genes_COOH <- names(fullAnnotation[grep(goterm_COOH, fullAnnotation, fixed=TRUE)])
+genes_Sulf <- names(fullAnnotation[grep(goterm_Sulf, fullAnnotation, fixed=TRUE)])
+genes_Nucl <- names(fullAnnotation[grep(goterm_Nucl, fullAnnotation, fixed=TRUE)])
+genes_TM   <- names(fullAnnotation[grep(goterm_TM,   fullAnnotation, fixed=TRUE)])
+
+vennDiagram(vennCounts(cbind(Potassium     = row.names(varPart) %in% genes_K,
+                             Carboxilic    = row.names(varPart) %in% genes_COOH,
+                             Sulfate       = row.names(varPart) %in% genes_Sulf,
+                             Nucleoside    = row.names(varPart) %in% genes_Nucl,
+                             Transmembrane = row.names(varPart) %in% genes_TM)))
+```
+
+There is hardly any overlap among genes involved in the transport of these substances. The only remarkable overlap
+happens between `r Term(GOTERM['GO:0006813'])` and `r Term(GOTERM['GO:0034220'])`. But, still the significance of
+each term should be quite independent of the significance of any other term. This was expected, because the analysis
+of functional enrichment applied algorithms to account for the dependence structure among GO terms. I analyse them
+separately, below.
+
+### 
 
 ## Cillium movement and cillium assembly
 
