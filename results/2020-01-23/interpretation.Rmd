@@ -55,9 +55,17 @@ fullAnnotation <- lapply(annotation.list,
                                          unlist(allAncestors[x], use.names=FALSE)))
                          })
 load(EXPRESSION)
-ls()
-head(varPart)
 ```
+
+Without any attempt to characterize gene function any further, I will make the assumption
+that the more genes in a pathway are expressed, the more active the pathway is. It is,
+however, conceivable that some genes are annotated as involved in a function that they
+regulate negatively.
+
+Dormant eggs are embryos. RNA was extracted either after forced diapause or not, but under
+hatching conditions. That is, a variable portion of eggs are expected to be leaving the
+dormancy stage and resuming metabolism, development and hatching. The portion of eggs
+getting ready to hatch is known to be larger in populations in regular environments.
 
 # Biological processes
 ## Nucleotide-excision repair
@@ -94,6 +102,9 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
   geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
+The expression of NER genes is higher in dormant embryos from populations evolved in
+the unpredictable environment. No idea why.
+
 ## G protein-coupled receptor signaing pathway, and signal transduction
 
 ```{r GproteinBars, fig.height=20}
@@ -120,8 +131,9 @@ reactable(z2,
 
 Among the `r length(genes)` genes in this category,
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'adj.P.Val'] <= 0.1)`
-have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with this function to plot all their stratified expression levels.
-I select the most differentially expressed ones.
+have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with
+this function to plot all their stratified expression levels. I select the most differentially
+expressed ones.
 
 ```{r GproteinPlot, fig.height=10, fig.width=8}
 z2 <- z2[z2$adj.P.Val < 0.1,]
@@ -140,7 +152,59 @@ Among the top `r length(genes)` genes analysed from the G protein-coupled recept
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] < 0)`
 have a reduced expression level in the unpredictable environment, and
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
-show an increased expression level.
+show an increased expression level. Thus, in general we expect dormant eggs from populations
+under the unpredictable regime to be less sensitive to this particular pathway of
+signal transduction.
+
+```{r signaltransductionBars, fig.width=12}
+goterm <- 'GO:0007165'
+genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
+genes <- genes[genes %in% row.names(varPart)]
+
+z0 <- varPart[genes,]
+z0 <- z0[order(z0$regime, decreasing=TRUE),]
+z0$gene <- factor(row.names(z0), levels=row.names(z0), ordered=TRUE)
+z0 <- pivot_longer(z0, cols=1:4, names_to='variable', values_to='variancePart')
+z0$variable <- factor(z0$variable, levels=c('regime', 'treatment', 'population', 'Residuals'), ordered=TRUE)
+ggplot(data=z0, mapping=aes(x=gene, y=variancePart, fill=variable)) +
+  geom_bar(stat='identity') + theme(axis.text.x=element_blank()) + ylab('Portion of explained variance') +
+  ggtitle(Term(GOTERM[goterm]))
+```
+
+```{r signaltransductionTab}
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
+          columns = list(
+            logFC   = colDef(format=colFormat(digits=3)),
+            AveExpr = colDef(format=colFormat(digits=3)),
+            t       = colDef(format=colFormat(digits=3)),
+            P.Value = colDef(format=colFormat(digits=3)),
+            adj.P.Val = colDef (format=colFormat(digits=3)),
+            z.std   = colDef(format=colFormat(digits=3))
+          ))
+```
+
+`r length(genes)` genes are involved in signal transduction. I focus on the 
+`r sum(z2$adj.P.Val < 0.1)` most significant ones.
+
+```{r signaltransductionPlot, fig.width=15, fig.height=15}
+z2 <- z2[z2$adj.P.Val < 0.1,]
+z2 <- z2[order(z2$logFC),]
+z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
+z  <- z[row.names(z2),]
+z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor('regular', levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+It seems that in general, signal transduction activity must be lower in resting
+eggs from populations under the unpredictable regime. This suggests that in
+unpredictable environments resting eggs rely less in (unreliable) environmental
+cues, and probably more in endogenous ones.
 
 ## Cell-matrix adhesion
 
@@ -180,6 +244,8 @@ have a reduced expression level in the unpredictable environment, and
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
 show an increased expression level.
 
+Cell-matrix adhesion is likely related to embryonic development.
+
 ## Potassium ion transport, carboxylic acid transport, and ion transmembrane transport
 Several functions related to ion transport are significant. I wonder to what extent their significance is not
 dependent on a common subset of genes.
@@ -210,6 +276,9 @@ each term should be quite independent of the significance of any other term. Thi
 of functional enrichment applied algorithms to account for the dependence structure among GO terms. I analyse them
 separately, below.
 
+In summary, most genes involved in ion transport, and also those involved in nucleoside transport,
+are expressed at lower levels in resting eggs from populations submitted to the random regime.
+
 ### Potassium ion transport
 
 ```{r potassiumBars, fig.height=10}
@@ -235,7 +304,7 @@ reactable(z2,
           ))
 ```
 
-```{r potassiumPlot, fig.height=10, fig.width=10}
+```{r potassiumPlot, fig.height=15, fig.width=10}
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -249,7 +318,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ### Ion transmembrane transport
 
-```{r ionBars, fig.height=15}
+```{r ionBars, fig.height=10}
 goterm <- goterm_TM
 genes <- genes_TM     # defined above.
 genes <- genes[genes %in% row.names(varPart)]
@@ -346,6 +415,8 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 ```
 
 ## Trehalose biosynthetic process
+
+Trehalose is... 
 
 ```{r trehalose}
 goterm <- 'GO:0005992'
