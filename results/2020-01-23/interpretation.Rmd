@@ -18,7 +18,7 @@ I will not look at the functions affected by hatching condition, since it only a
 Among all cellular functions significantly enriched with genes differentially expressed among selective regimes, I will focus
 on those that are most significant, and detailed enough. For example, I skip terms like *transmembrane transport*, *proteolysis*
 or *protein phosphorylation*, because they are too general. Sections below are named for the functional categories that I think
-are worth discussing. I will try to contextualize the results. My entry point to the literature is [GarciaRoger2019].
+are worth discussing. I will try to contextualize the results. My entry point to the literature is [@GarciaRoger2019].
 
 I need the results of the differential expression analysis (`2020-01-08`) to identify the genes annotated with the significant
 GO terms, and to assess the direction of gene expression change between selective regimes.
@@ -30,7 +30,7 @@ library(ggplot2)
 library(tidyr)
 library(reactable)
 ANNOTATION <- '../2019-07-26/genes/annotation.txt'
-EXPRESSION <- '../2020-01-08/genes.RData'   # Includes the variance partition and the mixed models fitted with dream()
+EXPRESSION <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
 ```
 
 The annotation table includes only the most specific terms that can be assigned to a
@@ -61,57 +61,79 @@ head(varPart)
 
 # Biological processes
 ## Nucleotide-excision repair
-This is term **GO:0006289**. It is among the most significantly enriched terms, with only 13 genes annotated.
+It is among the most significantly enriched terms, with only 13 genes annotated.
 
 ```{r NER}
 goterm <- 'GO:0006289'
 genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 # Not all genes annotated have been used in expression analysis
 genes <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes,])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
-topTable(fitmm, coef='regime', number=length(fitmm$F))[genes,]
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
+          columns = list(
+            logFC   = colDef(format=colFormat(digits=3)),
+            AveExpr = colDef(format=colFormat(digits=3)),
+            t       = colDef(format=colFormat(digits=3)),
+            P.Value = colDef(format=colFormat(digits=3)),
+            adj.P.Val = colDef (format=colFormat(digits=3)),
+            z.std   = colDef(format=colFormat(digits=3))
+          ))
 
-z <- as.data.frame(vobjDream$E[genes,])
-z$gene <- row.names(z)
+z2 <- z2[order(z2$logFC),]
+z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
+z <- z[row.names(z2),]
+z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor(NA, levels=c('regular', 'random'))
+GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-GE[GE$sample %in% c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"), 'regime'] <- 'regular'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ## G protein-coupled receptor signaing pathway, and signal transduction
 
-```{r Gprotein}
+```{r GproteinBars, fig.height=20}
 goterm <- 'GO:0007186'
 genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes <- genes[genes %in% row.names(varPart)]
-# I subset varPart and at the same time order the selected rows by 'regime', and the columns in the order desired.
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
-
-z <- as.data.frame(vobjDream$E[genes,])
-z$gene <- row.names(z)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor(NA, levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-GE[GE$sample %in% c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"), 'regime'] <- 'regular'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + ggtitle(Term(GOTERM[goterm]))
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 ```
 
-Among the `r length(genes)` genes in this category, `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'adj.P.Val'] <= 0.1)`
+```{r GproteinsTab}
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
+          columns = list(
+            logFC   = colDef(format=colFormat(digits=3)),
+            AveExpr = colDef(format=colFormat(digits=3)),
+            t       = colDef(format=colFormat(digits=3)),
+            P.Value = colDef(format=colFormat(digits=3)),
+            adj.P.Val = colDef (format=colFormat(digits=3)),
+            z.std   = colDef(format=colFormat(digits=3))
+          ))
+```
+
+Among the `r length(genes)` genes in this category,
+`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'adj.P.Val'] <= 0.1)`
 have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with this function to plot all their stratified expression levels.
 I select the most differentially expressed ones.
 
-```{r G2, fig.width=15, fig.height=20}
-z <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z <- z[row.names(z) %in% genes, ]   # gene order is preserved:
-reactable(z)
-
-genes <- head(row.names(z), n=50)
-GE <- GE[GE$gene %in% genes,]
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
-      facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r GproteinPlot, fig.height=10, fig.width=8}
+z2 <- z2[z2$adj.P.Val < 0.1,]
+z2 <- z2[order(z2$logFC),]
+z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
+z <- z[row.names(z2),]
+z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor('regular', levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 Among the top `r length(genes)` genes analysed from the G protein-coupled receptor signaling pathway,
@@ -126,16 +148,30 @@ show an increased expression level.
 goterm <- 'GO:0007160'
 genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes,])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
-reactable(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes,])  # not ordered by p-value
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
+          columns = list(
+            logFC   = colDef(format=colFormat(digits=3)),
+            AveExpr = colDef(format=colFormat(digits=3)),
+            t       = colDef(format=colFormat(digits=3)),
+            P.Value = colDef(format=colFormat(digits=3)),
+            adj.P.Val = colDef (format=colFormat(digits=3)),
+            z.std   = colDef(format=colFormat(digits=3))
+          ))
 
-z <- as.data.frame(vobjDream$E[genes,])
-z$gene <- row.names(z)
+z2 <- z2[order(z2$logFC),]
+z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
+z <- z[row.names(z2),]
+z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 Among the top `r length(genes)` genes involved in `r Term(GOTERM[goterm])`, 
@@ -180,50 +216,15 @@ separately, below.
 goterm <- goterm_K
 genes <- genes_K     # defined above
 genes <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 #plotPercentBars(varPart[genes,])
 ```
 
 ```{r potassiumTab}
-# I can't keep from using reactable, even if it does not display in the online version...
-reactable(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes,],
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))  # not ordered by p-value, just click on the column header to sort.
-```
-
-```{r potassiumPlot, fig.width=15, fig.height=20}
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F), sort.by='logFC')
-z2 <- z2[row.names(z2) %in% genes,]   # I want to preserve order by logFC
-z <- z[row.names(z2),]
-# Defining z$gene as a factor with ordered levels will make ggplot order the genes in ascending
-# logFC order.
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
-```
-
-### Ion transmembrane transport
-
-```{r ionBars, fig.height=20}
-goterm <- goterm_TM
-genes <- genes_TM     # defined above.
-genes <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
-```
-
-```{r ionTab}
-z <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z <- z[row.names(z) %in% genes,]   # still ordered by p-value!
-reactable(z,
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
           columns = list(
             logFC   = colDef(format=colFormat(digits=3)),
             AveExpr = colDef(format=colFormat(digits=3)),
@@ -234,24 +235,53 @@ reactable(z,
           ))
 ```
 
-```{r ionPlot, fig.width=15, fig.height=15}
-# To make plots visible, I plot only the most significant terms, say at FDR=0.1.
-# Again, I want to select and sort the rows of 'z' at the same time.
-genes <- row.names(z)[z$adj.P.Val <= 0.1]
-z2 <- z[genes[order(z[genes,'logFC'])],]
-# I rename it as z2 to be consistent with previous chunks. This is part of the topTable,
-# used only for sorting genes in the expression matrix, named z. Excuse the recycling
-# of variable names.
-
+```{r potassiumPlot, fig.height=10, fig.width=10}
+z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
-# Defining z$gene as a factor with ordered levels will make ggplot order the genes in ascending
-# logFC order.
 z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```
+
+### Ion transmembrane transport
+
+```{r ionBars, fig.height=15}
+goterm <- goterm_TM
+genes <- genes_TM     # defined above.
+genes <- genes[genes %in% row.names(varPart)]
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
+```
+
+```{r ionTab}
+z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
+z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+reactable(z2,
+          columns = list(
+            logFC   = colDef(format=colFormat(digits=3)),
+            AveExpr = colDef(format=colFormat(digits=3)),
+            t       = colDef(format=colFormat(digits=3)),
+            P.Value = colDef(format=colFormat(digits=3)),
+            adj.P.Val = colDef (format=colFormat(digits=3)),
+            z.std   = colDef(format=colFormat(digits=3))
+          ))
+```
+
+```{r ionPlot, fig.height=10, fig.width=10}
+z2 <- z2[z2$adj.P.Val <= 0.1,]
+z2 <- z2[order(z2$logFC),]
+z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
+z <- z[row.names(z2),]
+z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
+GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
+GE$regime <- factor('regular', levels=c('regular', 'random'))
+GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
+  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ### Nucleoside transmembrane transport
@@ -259,7 +289,8 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplo
 ```{r nucleoside}
 goterm <- goterm_Nucl
 genes  <- genes_Nucl
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -272,24 +303,24 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# I wanted the table to be ordered by FDR, but I need it now ordered by logFC:
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F), resort.by='logFC')
-z2 <- z2[row.names(z2) %in% genes,]
+z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
 z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
+  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ### Carboxylic acid transport
 
-```{r COOH, fig.height=10}
+```{r COOH}
 goterm <- goterm_COOH
 genes  <- genes_COOH
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -303,15 +334,15 @@ reactable(z2,
             z.std   = colDef(format=colFormat(digits=3))
           ))
 # I wanted the table to be ordered by FDR, but I need it now ordered by logFC:
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F), resort.by='logFC')
-z2 <- z2[row.names(z2) %in% genes,]
+z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
 z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ## Trehalose biosynthetic process
@@ -320,9 +351,11 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplo
 goterm <- 'GO:0005992'
 genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
+
 reactable(z2,
           columns = list(
             logFC   = colDef(format=colFormat(digits=3)),
@@ -332,7 +365,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -340,7 +373,8 @@ z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
+  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ## Cell motility, cillium movement and cillium assembly
@@ -365,7 +399,8 @@ vennDiagram(vennCounts(cbind('Cell motility'    = row.names(varPart) %in% genes_
 goterm <- goterm_cellmoti
 genes  <- genes_cellmoti
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -378,7 +413,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -386,7 +421,8 @@ z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ### Cillium movement
@@ -395,7 +431,8 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplo
 goterm <- goterm_movement
 genes  <- genes_movement
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -408,7 +445,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -416,16 +453,18 @@ z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
 GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
 GE$regime <- factor('regular', levels=c('regular', 'random'))
 GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
+  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
 ### Cillium assembly
 
-```{r assembly, fig.heigth=15}
+```{r assembly, fig.height=10, fig.width=10}
 goterm <- goterm_assembly
 genes  <- genes_assembly
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -438,7 +477,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -452,11 +491,12 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ## Proteasome-mediated ubiquitin-dependent protein catabolic process
 
-```{r proteasome, fig.heigth=15, fig.width=15}
+```{r proteasome, fig.height=10}
 goterm <- 'GO:0043161'
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -469,7 +509,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -483,7 +523,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ## Response to oxidative stress
 
-```{r oxiestres}
+```{r oxiestres, fig.height=8}
 goterm <- 'GO:0006979'
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
@@ -500,7 +540,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -537,7 +577,7 @@ reactable(z2,
           ))
 ```
 
-```{r motorPlot}
+```{r motorPlot, fig.height=10}
 # I limit the number of genes.
 z2 <- z2[z2$adj.P.Val <= 0.1,]
 z2 <- z2[order(z2$logFC),]
@@ -577,7 +617,8 @@ goterm <- 'GO:0004181'
 Term(GOTERM[goterm])
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 
 z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
 z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
@@ -590,7 +631,7 @@ reactable(z2,
             adj.P.Val = colDef (format=colFormat(digits=3)),
             z.std   = colDef(format=colFormat(digits=3))
           ))
-# It's actually faster to re-order z2 after having selected the rows.
+
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
 z <- z[row.names(z2),]
@@ -604,12 +645,13 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ### Serine-type endopeptidase activity
 
-```{r serineBars, fig.height=15}
+```{r serineBars, fig.height=10}
 goterm <- 'GO:0004252'
 Term(GOTERM[goterm])
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 ```
 
 ```{r serineTab}
@@ -626,7 +668,7 @@ reactable(z2,
           ))
 ```
 
-```{r serinePlot, fig.height=10, fig.width=10}
+```{r serinePlot, fig.height=10}
 z2 <- z2[z2$adj.P.Val <= 0.1,]     # only significantly regulated genes
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
@@ -641,12 +683,13 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ### Calcium-dependent cysteine-type endopeptidase activity
 
-```{r calciumBars, fig.height=15}
+```{r calciumBars, fig.height=8}
 goterm <- 'GO:0004198'
 Term(GOTERM[goterm])
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 ```
 
 ```{r calciumTab}
@@ -663,7 +706,7 @@ reactable(z2,
           ))
 ```
 
-```{r calciumPlot, fig.height=10, fig.width=10}
+```{r calciumPlot, fig.height=8}
 z2 <- z2[z2$adj.P.Val <= 0.13,]     # only significantly regulated genes
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
@@ -678,12 +721,13 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ### Metalloendopeptidase activity
 
-```{r metalloendoBars, fig.height=15}
+```{r metalloendoBars, fig.height=10}
 goterm <- 'GO:0004222'
 Term(GOTERM[goterm])
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 ```
 
 ```{r metalloendoTab}
@@ -700,7 +744,7 @@ reactable(z2,
           ))
 ```
 
-```{r metalloendoPlot, fig.height=10, fig.width=10}
+```{r metalloendoPlot, fig.height=8}
 z2 <- z2[z2$adj.P.Val <= 0.11,]     # only significantly regulated genes
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
@@ -720,7 +764,8 @@ goterm <- 'GO:0016715'
 Term(GOTERM[goterm])
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'Residuals')])
 ```
 
 ```{r oxidoreductaseTab}
@@ -737,7 +782,7 @@ reactable(z2,
           ))
 ```
 
-```{r oxidoreductasePlot, fig.height=10, fig.width=10}
+```{r oxidoreductasePlot}
 #z2 <- z2[z2$adj.P.Val <= 0.11,]     # only significantly regulated genes
 z2 <- z2[order(z2$logFC),]
 z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
@@ -751,5 +796,8 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 ```
 
 # Session info
+```{r sessioninfo}
+sessionInfo()
+```
 
 # References
