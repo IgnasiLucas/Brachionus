@@ -26,6 +26,14 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-01-23
+The functional enrichment analysis produced a list of gene ontology terms that don't always
+convey much meaning by themselves. Here I start to contextualize those results, contrasting
+them to the literature, and also checking in what direction the significant expression differences
+happened among the relevant genes. You can see the result [here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-23/interpretation.html).
+But be aware that I use reactables, which do not display in that link. You'd better download the
+report from the results/2020-01-23 folder and open it locally.
+
 # 2020-01-14
 Here I determine what gene ontology terms are associated with differential expression between
 selective regimes, and between hatching conditions. Hatching condition did not affect many genes,
