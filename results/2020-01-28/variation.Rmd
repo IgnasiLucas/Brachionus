@@ -1,0 +1,118 @@
+---
+title: "Comparison of variation of expression level between regimes"
+author: "J. Ignacio Lucas Lledó"
+date: "28/1/2020"
+output: html_document
+bibliography: variation.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+```{r setup2, message=FALSE}
+library(variancePartition)
+library(ggplot2)
+library(tidyr)
+library(reactable)
+library(BiocParallel)
+library(edgeR)
+
+EXPRESSION <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
+COUNTS <- '../2019-03-29/genes.PostCount.txt'
+NUM_THREADS <- 2
+```
+
+One obvious expectation that I have not tested yet is that resting eggs under an unpredictable
+environment should also have a more *random*, noiser, or unpredictable gene expression. That is,
+gene expression levels should vary more among eggs laid in unpredictable environments. To put it
+another way, in perfectly regular environments, eggs are expected to resemble more each other in
+terms of gene expression patters. Gene expression should be less variable among eggs in regular
+than in unpredictable environments.
+
+We did not measure expression levels in single cells. But the variance of expression levels among
+individual cells contributes to the observed variance among samples, from which the mean-variance
+relationshps were estimated. The `variancePartition` package does not include a function to plot
+the estimated mean-variance relationship. That relationship is used to impute the variance of
+every single mesurement of expression level in every sample. The inverse of that imputed variance
+is stored in the `EList` object created with the `voomWithDreamWeights()` function, that I
+named `vobjDream`. 
+
+```{r variance, message=FALSE}
+load(EXPRESION)
+colnames(vobjDream$E)       <- paste('expression', row.names(vobjDream$targets), sep='_')
+colnames(vobjDream$weights) <- paste('variance', row.names(vobjDream$targets), sep='_')
+meanVar <- as.data.frame(cbind(vobjDream$E, 1/vobjDream$weights))
+meanVar$gene <- row.names(meanVar)    # column 25
+meanVar <- pivot_longer(meanVar, cols=1:24, names_to=c('what','population','hatching'),
+                        names_pattern='(expression|variance)_(X[1-6])([AC])', values_to='value')
+meanVar$regime <- factor('regular', levels=c('regular', 'random'))
+meanVar[meanVar$population %in% c('X1', 'X2', 'X4'), 'regime'] <- 'random'
+meanVar <- pivot_wider(meanVar, names_from='what', values_from='value')
+ggplot(data=meanVar, mapping=aes(x=expression, y=variance, color=regime)) +
+  geom_smooth() + xlab('log2 of counts per million')
+```
+
+Yes, eggs have more variable expression levels in unpredictable environments. The difference
+is not that big, actually. It makes me think that heteroscedasticity may not be properly
+taken into account. Even though variance is modelled at the observation level, variances of
+individual observations are predicted from the mean-variance trend estimated from gene-wise
+mean expression levels and residual standard deviations (from gene-wise linear fits)
+[@Law2014]. That is, the variance predictions are informed by the expression level expected
+under a gene-wise linear model. Such models do include the effects of all variables. However,
+I don't think the systematic effect of the selective regime in gene expression variance is
+taken into account.
+
+# Separate estimation of variances for each selective regime
+
+```{r separate}
+counts <- as.matrix(read.table(COUNTS, row.names=1, header=TRUE))
+threshold <- 5 / (min(colSums(counts)) / 1000000)
+keep <- rowSums(cpm(counts) > threshold) >= 4
+
+# samples:                 1A 1C 2A 2C 3A 3C 4A 4C 5A 5C 6A 6C
+countsRandom  <- counts[keep,c( 1, 2, 3, 4,       7, 8            )]
+countsRegular <- counts[keep,c(             5, 6,       9,10,11,12)]
+geneExprRandom  <- DGEList(countsRandom)
+geneExprRandom  <- calcNormFactors(geneExprRandom)
+geneExprRegular <- DGEList(countsRegular)
+geneExprRegular <- calcNormFactors(geneExprRegular)
+
+metadataRandom  <- data.frame(row.names  = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"),
+                              population = factor(as.character(c(1,1,2,2,3,3)), levels=c('1','2','3')),
+                              treatment  = c(0, 1, 0, 1, 0, 1),
+                              treatmentChar = factor(c('hatch','diapause','hatch','diapause','hatch','diapause')))
+metadataRegular <- data.frame(row.names  = c("X3A_S9", "X3C_S11", "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
+                              population = factor(as.character(c(1,1,2,2,3,3)), levels=c('1','2','3')),
+                              treatment  = c(0, 1, 0, 1, 0, 1),
+                              treatmentChar = factor(c('hatch','diapause','hatch','diapause','hatch','diapause')))
+
+form <- ~ treatment + (1|population)
+
+param = SnowParam(NUM_THREADS, "SOCK")
+register(param)
+
+## Weights
+weightsRandom  <- voomWithDreamWeights(geneExprRandom,  form, metadataRandom)
+weightsRegular <- voomWithDreamWeights(geneExprRegular, form, metadataRegular)
+```
+
+```{r plot, message=FALSE}
+E <- cbind(weightsRandom$E, weightsRegular$E)[,c(1,2,3,4,7,8,5,6,9,10,11,12)]
+W <- cbind(weightsRandom$weights, weightsRegular$weights)[,c(1,2,3,4,7,8,5,6,9,10,11,12)]
+colnames(E) <- paste('E', row.names(vobjDream$targets), sep='_')
+colnames(W) <- paste('V', row.names(vobjDream$targets), sep='_')
+meanVarSep  <- as.data.frame(cbind(E, 1/W))
+meanVarSep$gene <- row.names(E)    # column 25
+meanVarSep <- pivot_longer(meanVarSep, cols=1:24, names_to=c('what','population','hatching'),
+                           names_pattern='([EV])_(X[1-6])([AC])', values_to='value')
+meanVarSep$regime <- factor('regular', levels=c('regular', 'random'))
+meanVarSep[meanVarSep$population %in% c('X1', 'X2', 'X4'), 'regime'] <- 'random'
+meanVarSep <- pivot_wider(meanVarSep, names_from='what', values_from='value')
+ggplot(data=meanVarSep, mapping=aes(x=E, y=V, color=regime)) +
+  geom_smooth() + xlab('log2 of counts per million')
+```
+
+# References
