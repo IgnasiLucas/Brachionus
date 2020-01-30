@@ -105,7 +105,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 The expression of NER genes is higher in dormant embryos from populations evolved in
 the unpredictable environment. No idea why.
 
-## G protein-coupled receptor signaing pathway, and signal transduction
+## G protein-coupled receptor signaling pathway, and signal transduction
 
 ```{r GproteinBars, fig.height=20}
 goterm <- 'GO:0007186'
@@ -416,7 +416,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ## Trehalose biosynthetic process
 
-Trehalose is... 
+Trehalose is 
 
 ```{r trehalose}
 goterm <- 'GO:0005992'

@@ -22,7 +22,7 @@ library(edgeR)
 
 EXPRESSION <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
 COUNTS <- '../2019-03-29/genes.PostCount.txt'
-NUM_THREADS <- 2
+NUM_THREADS <- 40
 ```
 
 One obvious expectation that I have not tested yet is that resting eggs under an unpredictable
@@ -41,7 +41,7 @@ is stored in the `EList` object created with the `voomWithDreamWeights()` functi
 named `vobjDream`. 
 
 ```{r variance, message=FALSE}
-load(EXPRESION)
+load(EXPRESSION)
 colnames(vobjDream$E)       <- paste('expression', row.names(vobjDream$targets), sep='_')
 colnames(vobjDream$weights) <- paste('variance', row.names(vobjDream$targets), sep='_')
 meanVar <- as.data.frame(cbind(vobjDream$E, 1/vobjDream$weights))
@@ -66,11 +66,21 @@ I don't think the systematic effect of the selective regime in gene expression v
 taken into account.
 
 # Separate estimation of variances for each selective regime
+Let's see what happens if I fit a simpler model to each regime separately. Below I separate the
+samples by selective regime. However, I do not apply a regime-specific filter. Instead, I use the
+same genes that had been selected before, for the whole dataset analysis. This has the undesired
+effect of introducing very log expression genes in both subsets of samples (I think more so in those
+from the unpredictable environment). But I want to make sure I'm using the same subset of genes
+in both split analyses and in the original one. That way, I will be able to use the newly estimated
+weights with the original model in the whole data set.
 
-```{r separate}
+```{r separate, message=FALSE}
 counts <- as.matrix(read.table(COUNTS, row.names=1, header=TRUE))
 threshold <- 5 / (min(colSums(counts)) / 1000000)
 keep <- rowSums(cpm(counts) > threshold) >= 4
+## Also tried with a more restrictive filter: at least 2 samples with over-threshold expression levels in each subset
+## (17225 genes). Results are very similar.
+#keep <- rowSums(cpm(counts[,c(1,2,3,4,7,8)]) > threshold) >= 2 & rowSums(cpm(counts[,c(5,6,9,10,11,12)]) > threshold) >= 2
 
 # samples:                 1A 1C 2A 2C 3A 3C 4A 4C 5A 5C 6A 6C
 countsRandom  <- counts[keep,c( 1, 2, 3, 4,       7, 8            )]
@@ -114,5 +124,47 @@ meanVarSep <- pivot_wider(meanVarSep, names_from='what', values_from='value')
 ggplot(data=meanVarSep, mapping=aes(x=E, y=V, color=regime)) +
   geom_smooth() + xlab('log2 of counts per million')
 ```
+
+Estimating the mean-variance relationship separately for samples from the two different environments does
+show different relationships. I expected samples from the unpredictable environment to have higher variance
+of expression level, in general. What I see is that only genes expressed at low levels have higher expression
+variance in unpredictable than in regular environments. It seems biologically meaningful: highly
+expressed genes are likely to perform constitutive functions in the dormant embryos, and there is no good
+reason to expect them to vary very much among eggs. Lowly expressed genes, on the other hand, may include
+a complement with secondary functions, much less functionally constrained to vary.
+
+Can we argue that embryos adapt to unpredictable environments by varying the expression level of a set of
+low-expression genes? What are the biological functions of highly expressed genes? Are they common between
+environments? What about the low-expression ones? Also, does the different mean-variance relationships affect
+the differential expression analysis? Lets start with the last one.
+
+# Variance partition with weights estimated separately for regular and unpredictable environments
+
+```{r variancePartition, message=FALSE}
+# The expression matrix I use is the original one, in vobjDream$E, where all samples underwent
+# a common normalization.
+metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
+                                  "X3A_S9", "X3C_S11", "X4A_S6", "X4C_S12",
+                                  "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
+                       regime = c(1, 1, 1, 1, 0, 0 , 1, 1, 0, 0, 0, 0),
+                       regimeChar = c("random", "random", "random", "random",
+                                  "regular", "regular", "random", "random",
+                                  "regular", "regular", "regular", "regular"),
+                       population = c("1", "1", "2", "2", "3", "3",
+                                      "4", "4", "5", "5", "6", "6"),
+                       treatment = rep(c(0, 1), 6),
+                       treatmentChar = rep(c("hatch", "diapause"), 6))
+
+form <- ~ regime + treatment + regime:treatment + (1|population)
+
+varPartSep <- fitExtractVarPartModel(vobjDream$E[row.names(E),], form, metadata, weightsMatrix=W)
+plotVarPart(varPartSep)
+```
+
+```{r differentialExpression, message=FALSE}
+fitmmSep <- dream(vobjDream$E[row.names(E),], form, metadata, weightsMatrix=W)
+
+```
+
 
 # References
