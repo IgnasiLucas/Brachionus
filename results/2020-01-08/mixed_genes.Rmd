@@ -67,7 +67,7 @@ metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
                        treatmentChar = rep(c("hatch", "diapause"), 6))
 
 ## Model (includes interaction term)
-form <- ~ regime * treatment + (1|population)
+form <- ~ regime + treatment + regime:treatment + (1|population)
 ```
 
 The `variancePartition` package requires all categorical variables to be random effects. This is a way to prevent
