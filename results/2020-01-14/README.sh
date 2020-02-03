@@ -28,7 +28,7 @@ for tag in genes isoforms; do
          # to call render within a function that uses those parameters as arguments.
          R --no-save -q -e "render_report <- function(tag, var){
                                rmarkdown::render('enrichment.Rmd',
-                                  params = list(TAG = '$tag', VAR = '$var'),
+                                  params = list(TAG = tag, VAR = var),
                                   output_file = paste(tag, var, 'enrichment.html', sep='/'))
                             }" \
                         -e "render_report('$tag', '$var')"

@@ -416,7 +416,10 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ## Trehalose biosynthetic process
 
-Trehalose is 
+Trehalose is a disaccharide that confers protection against dessication in several organisms [@Clegg1965]. Trehalose
+is present in higher concentrations in resting eggs of *B. plicatilis* (which resist dessication) than in asexual eggs
+[@Rozema2019]. While trehalose is a very relevant molecule for dormant embryos, it is unclear why genes involved in
+its biosynthesis are expressed more in eggs from regular than from unpredictable environments.
 
 ```{r trehalose}
 goterm <- 'GO:0005992'
@@ -448,12 +451,17 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplo
   facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
-## Cell motility, cillium movement and cillium assembly
+## Cell motility, cilium movement and cilium assembly
+Adult individuals of *B. plicatilis* have a crown of cilia. Thus, the expression of genes for cilium assembly,
+and probably also those for cilium movement and cell motility in the embryo must be related to embryonic
+development. They are, thus a sign that the embryos are leaving the dormant state and resuming metabolism.
+Under this light, it makes sense that eggs from a regular environment express these genes more than eggs from
+the unpredictable environment, because most of the former must be getting ready to hatch.
 
 ```{r cillia}
 goterm_cellmoti <- 'GO:0048870'   # cell motility
-goterm_movement <- 'GO:0003341'   # cillium movement
-goterm_assembly <- 'GO:0060271'   # cillium assembly
+goterm_movement <- 'GO:0003341'   # cilium movement
+goterm_assembly <- 'GO:0060271'   # cilium assembly
 
 genes_cellmoti <- names(fullAnnotation[grep(goterm_cellmoti, fullAnnotation, fixed=TRUE)])
 genes_movement <- names(fullAnnotation[grep(goterm_movement, fullAnnotation, fixed=TRUE)])
@@ -496,7 +504,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
   geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
-### Cillium movement
+### Cilium movement
 
 ```{r movement}
 goterm <- goterm_movement
@@ -528,7 +536,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
   geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
 ```
 
-### Cillium assembly
+### Cilium assembly
 
 ```{r assembly, fig.height=10, fig.width=10}
 goterm <- goterm_assembly
@@ -562,7 +570,7 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ## Proteasome-mediated ubiquitin-dependent protein catabolic process
 
-```{r proteasome, fig.height=10}
+```{r proteasome, fig.height=10, fig.weight=10}
 goterm <- 'GO:0043161'
 genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
 genes  <- genes[genes %in% row.names(varPart)]
