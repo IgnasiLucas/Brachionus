@@ -28,8 +28,10 @@ library(variancePartition)
 library(GO.db)
 library(ggplot2)
 library(stringr)
-ANNOTATION <- '../2019-07-26/genes/annotation.txt'
-EXPRESSION <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
+ANNOTATION   <- '../2019-07-26/genes/annotation.txt'
+EXPRESSION   <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
+INTERPROSCAN <- '../2019-07-19/functional_annotation.tsv'  # annotation of transcripts
+TRANS2GENE   <- 'transcript2gene.txt'   # created in this folder by README.sh from 2019-07-10/transcripts.fa
 ```
 
 The annotation table includes only the most specific terms that can be assigned to a
@@ -61,14 +63,23 @@ that the more genes in a pathway are expressed, the more active the pathway is. 
 however, conceivable that some genes are annotated as involved in a function that they
 regulate negatively.
 
-Dormant eggs are embryos. RNA was extracted either after forced diapause or not, but under
-hatching conditions. That is, a variable portion of eggs are expected to be leaving the
-dormancy stage and resuming metabolism, development and hatching. The portion of eggs
-getting ready to hatch is known to be larger in populations in regular environments.
+Dormant or resting eggs are embryos in a dormant state. RNA was extracted either after
+forced diapause or not, but under hatching conditions. That is, a variable portion of
+eggs are expected to be leaving the dormancy stage and resuming metabolism, development
+and hatching. The portion of eggs getting ready to hatch is known to be larger (actually,
+a majority) in populations from regular environments. Thus, some of our results could
+resemble those from comparisons between resting and non-resting (amictic) eggs
+[@Ziv2017, @Rozema2019].
+
+We know that gene expression levels do not correlate with protein abundances [@Ziv2017].
+In dormant embryos, where translation is downregulated [@Ziv2017], this lack of correlation
+may be even more important. Many genes found to be expressed in dormant embryos may only
+be translated upon exit from dormancy.
 
 ```{r functions}
+# By using 'paste(goterm,collapse='|')', I can retrieve all genes annotated with any of a set of GO terms.
 getGenes <- function(goterm, annotation = fullAnnotation, varpart = varPart) {
-  genes <- names(annotation[grep(goterm, annotation, fixed=TRUE)])
+  genes <- names(annotation[grep(paste(goterm, collapse='|'), annotation)])
   if (! is.null(varpart)) {
     genes <- genes[genes %in% row.names(varpart)]
   }
@@ -85,9 +96,39 @@ volcanoPlot <- function(fit=fitmm, Coef='regime', num=length(fitmm$F), term=gote
 }
 ```
 
+For adequate interpretation of some categories, I will need to check the original functional annotation
+performed with interproscan on `2019-07-19`. From one of the output tables, I select the most informative
+columns, potentially including names of functional domains detected in transcripts. I also need the
+correspondance between genes and transcripts, which is found in `2019-07-10/transcripts.fa`.
+
+```{r transcripts}
+# The file is tab-separated. Some rows miss the last two fields. Some e-values are '-'. And
+# functional description strings may include the single quote character.
+interpro <- read.table(INTERPROSCAN, sep='\t', fill=TRUE, na.strings=c('-',''), quote='"',
+                       colClasses=c('character','NULL','integer','factor','character','character',
+                                    'NULL','NULL','numeric','NULL','NULL','character','character','character'),
+                       col.names=c('transcript', NA, 'tsLength','analysis','acc','description', NA, NA,
+                                   'evalue', NA, NA,'IPacc','IPdescription','GO'))
+interpro$transcript <- substr(interpro$transcript, 1, 14)   # to remove the .p1, .p2... suffix.
+
+ts2gene <- read.table(TRANS2GENE, colClasses=c('character','character'), col.names=c('transcript','gene'))
+# Having all the information, I want a function that outputs the interpro annotations of a gene, a
+# set of genes, or a GO term.
+showFunctions <- function(gene, goterm=NULL, transcriptTable=ts2gene, annotation=interpro){
+  if (! is.null(gene)) {
+    return(annotation[annotation$transcript %in% transcriptTable[transcriptTable$gene %in% gene, 'transcript'],])
+  } else {
+    return(showFunctions(getGenes(goterm)))
+  }
+}
+```
+
 # Biological processes
 ## Nucleotide-excision repair
-It is among the most significantly enriched terms, with only 13 genes annotated.
+It is among the most significantly enriched terms, with only 13 genes annotated. In all volcano
+plots below, fold changes are computed with the expression level in the unpredictable regime in
+the numerator: if the log fold-change is negative, the expression is higher in the regular
+environment, and viceversa.
 
 ```{r NER}
 goterm <- 'GO:0006289'
@@ -98,7 +139,7 @@ volcanoPlot()
 ```
 
 The expression of NER genes is higher in dormant embryos from populations evolved in
-the unpredictable environment. No idea why.
+the unpredictable environment. No idea why. 
 
 ## G protein-coupled receptor signaling pathway, and signal transduction
 
@@ -262,18 +303,22 @@ development. They are, thus a sign that the embryos are leaving the dormant stat
 Under this light, it makes sense that eggs from a regular environment express these genes more than eggs from
 the unpredictable environment, because most of the former must be getting ready to hatch.
 
+Dr. Roger has actually observed embryo movement in many of the eggs from
+the predictable regime after 30 hours of exposure to hatching conditions (personal
+communication).
+
 ```{r cillia}
 goterm_cellmoti <- 'GO:0048870'   # cell motility
 goterm_movement <- 'GO:0003341'   # cilium movement
 goterm_assembly <- 'GO:0060271'   # cilium assembly
 
-genes_cellmoti <- names(fullAnnotation[grep(goterm_cellmoti, fullAnnotation, fixed=TRUE)])
-genes_movement <- names(fullAnnotation[grep(goterm_movement, fullAnnotation, fixed=TRUE)])
-genes_assembly <- names(fullAnnotation[grep(goterm_assembly, fullAnnotation, fixed=TRUE)])
+genes_cellmoti <- getGenes(goterm_cellmoti)
+genes_movement <- getGenes(goterm_movement)
+genes_assembly <- getGenes(goterm_assembly)
 
 vennDiagram(vennCounts(cbind('Cell motility'    = row.names(varPart) %in% genes_cellmoti,
-                             'Cillium movement' = row.names(varPart) %in% genes_movement,
-                             'Cillium assembly' = row.names(varPart) %in% genes_assembly)))
+                             'Cilium movement' = row.names(varPart) %in% genes_movement,
+                             'Cilium assembly' = row.names(varPart) %in% genes_assembly)))
 ```
 
 ### Cell motility
@@ -322,7 +367,37 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+It is unclear why preteasome-mediated protein degradation should be more or less active in one or
+the other regime. And the patter is actually not consistent: two genes from this pathway are quite
+significantly (but not very much) more expressed in the unpredictable than in the regular environment.
+But several other genes in the pathway are less significantly, but to a higher degree underexpressed
+in the unpredictable regime. A fruitful interpretation may require individual inspection of those genes.
+
+```{r proteasomeGenes}
+z <- topTable(fitmm, coef='regime', number=length(fitmm$F), p.value=0.1)
+z <- z[row.names(z) %in% genes,]
+PosLFC <- row.names(z[z$logFC > 0,])
+NegLFC <- row.names(z[z$logFC < 0,])
+zRandom <- unique(c(showFunctions(PosLFC)[,'description'],
+                    showFunctions(PosLFC)[,'IPdescription']))
+
+zRegular <- unique(c(showFunctions(NegLFC)[,'description'],
+                     showFunctions(NegLFC)[,'IPdescription']))
+```
+
+Among the `r dim(z)[1]` most significantly differentially expressed genes presumably
+involved in the `r Term(GOTERM[goterm])`, the `r length(PosLFC)` that are overexpressed
+in the unpredictable environment encode some protein domains that are
+not found among the `r length(NegLFC)` genes overexpressed in the regular regime; namely:
+`r paste(zRandom[!zRandom %in% zRegular], collapse=', ')`.
+
+Likewise, among the genes involved in this biological process that are overexpressed in
+the regular environment, we see the following protein domains encoded: 
+`r paste(zRegular[!zRegular %in% zRandom], collapse=', ')`.
+
 ## Response to oxidative stress
+Oxidative stress is one of the threats faced by dormant embryos, and protection against it is one
+of the classic hallmarks of dormancy [@Clark2012,@Ziv2017]. 
 
 ```{r oxiestres, fig.height=8}
 goterm <- 'GO:0006979'
@@ -334,6 +409,30 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 ```{r oxiestresVolcano}
 volcanoPlot()
 ```
+
+In this case again, the differential expression does not have the same sign in all genes from
+this category that are regulated by the selective regime.
+
+```{r oxiestresGenes}
+z <- topTable(fitmm, coef='regime', number=length(fitmm$F), p.value=0.1)
+z <- z[row.names(z) %in% genes,]
+PosLFC <- row.names(z[z$logFC > 0,])
+NegLFC <- row.names(z[z$logFC < 0,])
+zRandom <- unique(c(showFunctions(PosLFC)[,'description'],
+                    showFunctions(PosLFC)[,'IPdescription']))
+
+zRegular <- unique(c(showFunctions(NegLFC)[,'description'],
+                     showFunctions(NegLFC)[,'IPdescription']))
+```
+
+Among the `r length(genes)` annotated with the term for `r Term(GOTERM[goterm])`, only
+`r dim(z)[1]` are significantly regulated by the selective regime at 0.1 FDR:
+`r length(PosLFC)` upregulated in the unpredictable regime, and
+`r length(NegLFC)` upregulated in the regular regime. The protein domains encoded in
+the former but not in the latter are: `r paste(zRandom[!(zRandom %in% zRegular)], collapse=', ')`.
+
+And found only in the genes overexpressed in the regular environment, we have:
+`r paste(zRegular[!(zRegular %in% zRandom)])`.
 
 # Molecular functions
 ## Motor activity
@@ -348,6 +447,12 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 ```{r motorVolcano}
 volcanoPlot()
 ```
+
+The three most significant genes here are overexpressed in eggs from the unpredictable
+environment, which seems to contrast the results for biological processes of cell motility
+and cilium movement. However, `r Term(GOTERM[goterm])` is defined as
+`r Definition(GOTERM[goterm])`. Only `r sum(getGenes(goterm) %in% getGenes('GO:0003341'))`
+genes involved in `r Term(GOTERM[goterm])` is also involved in `r Term(GOTERM['GO:0003341'])`.
 
 ## Peptidase activities: metallocarboxypeptidase activity, metalloendopeptidase activity, serine-type endopeptidase activity and calcium-dependent cysteine-type endopeptidase activity
 
