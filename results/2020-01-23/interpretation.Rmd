@@ -27,8 +27,7 @@ GO terms, and to assess the direction of gene expression change between selectiv
 library(variancePartition)
 library(GO.db)
 library(ggplot2)
-library(tidyr)
-library(reactable)
+library(stringr)
 ANNOTATION <- '../2019-07-26/genes/annotation.txt'
 EXPRESSION <- '../2020-01-08/genes.RData'   # variance partition and the mixed models fitted with dream()
 ```
@@ -67,39 +66,35 @@ hatching conditions. That is, a variable portion of eggs are expected to be leav
 dormancy stage and resuming metabolism, development and hatching. The portion of eggs
 getting ready to hatch is known to be larger in populations in regular environments.
 
+```{r functions}
+getGenes <- function(goterm, annotation = fullAnnotation, varpart = varPart) {
+  genes <- names(annotation[grep(goterm, annotation, fixed=TRUE)])
+  if (! is.null(varpart)) {
+    genes <- genes[genes %in% row.names(varpart)]
+  }
+  return(genes)
+}
+
+volcanoPlot <- function(fit=fitmm, Coef='regime', num=length(fitmm$F), term=goterm, genes=getGenes(term)){
+  DE <- topTable(fit, coef=Coef, number=num)
+  DE$annotation <- factor('other', levels=c('other', Term(GOTERM[term])), ordered=TRUE)
+  DE[row.names(DE) %in% genes, 'annotation'] <- Term(GOTERM[term])
+  DE <- DE[order(DE$annotation),]
+  ggplot(data=DE, mapping=aes(x=logFC, y=-log10(P.Value), color=str_wrap(annotation, width=30))) + geom_point() +
+    labs(color='Annotation')
+}
+```
+
 # Biological processes
 ## Nucleotide-excision repair
 It is among the most significantly enriched terms, with only 13 genes annotated.
 
 ```{r NER}
 goterm <- 'GO:0006289'
-genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-# Not all genes annotated have been used in expression analysis
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 The expression of NER genes is higher in dormant embryos from populations evolved in
@@ -109,24 +104,13 @@ the unpredictable environment. No idea why.
 
 ```{r GproteinBars, fig.height=20}
 goterm <- 'GO:0007186'
-genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r GproteinsTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
+```{r GproteinVolcano}
+volcanoPlot()
 ```
 
 Among the `r length(genes)` genes in this category,
@@ -134,19 +118,6 @@ Among the `r length(genes)` genes in this category,
 have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with
 this function to plot all their stratified expression levels. I select the most differentially
 expressed ones.
-
-```{r GproteinPlot, fig.height=10, fig.width=8}
-z2 <- z2[z2$adj.P.Val < 0.1,]
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
-```
 
 Among the top `r length(genes)` genes analysed from the G protein-coupled receptor signaling pathway,
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] < 0)`
@@ -158,48 +129,14 @@ signal transduction.
 
 ```{r signaltransductionBars, fig.width=12}
 goterm <- 'GO:0007165'
-genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes <- genes[genes %in% row.names(varPart)]
-
-z0 <- varPart[genes,]
-z0 <- z0[order(z0$regime, decreasing=TRUE),]
-z0$gene <- factor(row.names(z0), levels=row.names(z0), ordered=TRUE)
-z0 <- pivot_longer(z0, cols=1:4, names_to='variable', values_to='variancePart')
-z0$variable <- factor(z0$variable, levels=c('regime', 'treatment', 'population', 'Residuals'), ordered=TRUE)
-ggplot(data=z0, mapping=aes(x=gene, y=variancePart, fill=variable)) +
-  geom_bar(stat='identity') + theme(axis.text.x=element_blank()) + ylab('Portion of explained variance') +
-  ggtitle(Term(GOTERM[goterm]))
+genes <- getGenes(goterm)
 ```
 
-```{r signaltransductionTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
+```{r signaltransductionVolcano}
+volcanoPlot()
 ```
 
-`r length(genes)` genes are involved in signal transduction. I focus on the 
-`r sum(z2$adj.P.Val < 0.1)` most significant ones.
-
-```{r signaltransductionPlot, fig.width=15, fig.height=15}
-z2 <- z2[z2$adj.P.Val < 0.1,]
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z  <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
-```
+`r length(genes)` genes are involved in signal transduction. 
 
 It seems that in general, signal transduction activity must be lower in resting
 eggs from populations under the unpredictable regime. This suggests that in
@@ -210,32 +147,10 @@ cues, and probably more in endogenous ones.
 
 ```{r adhesion}
 goterm <- 'GO:0007160'
-genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 Among the top `r length(genes)` genes involved in `r Term(GOTERM[goterm])`, 
@@ -283,135 +198,46 @@ are expressed at lower levels in resting eggs from populations submitted to the 
 
 ```{r potassiumBars, fig.height=10}
 goterm <- goterm_K
-genes <- genes_K     # defined above
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-#plotPercentBars(varPart[genes,])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r potassiumTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r potassiumPlot, fig.height=15, fig.width=10}
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r potassiumVolcano}
+volcanoPlot()
 ```
 
 ### Ion transmembrane transport
 
 ```{r ionBars, fig.height=10}
 goterm <- goterm_TM
-genes <- genes_TM     # defined above.
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r ionTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r ionPlot, fig.height=10, fig.width=10}
-z2 <- z2[z2$adj.P.Val <= 0.1,]
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
-  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r ionVolcano}
+volcanoPlot()
 ```
 
 ### Nucleoside transmembrane transport
 
 ```{r nucleoside}
 goterm <- goterm_Nucl
-genes  <- genes_Nucl
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
-  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ### Carboxylic acid transport
 
 ```{r COOH}
 goterm <- goterm_COOH
-genes  <- genes_COOH
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-# I wanted the table to be ordered by FDR, but I need it now ordered by logFC:
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ## Trehalose biosynthetic process
@@ -423,32 +249,10 @@ its biosynthesis are expressed more in eggs from regular than from unpredictable
 
 ```{r trehalose}
 goterm <- 'GO:0005992'
-genes <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes <- genes[genes %in% row.names(varPart)]
+genes <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) + geom_boxplot() +
-  facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ## Cell motility, cilium movement and cilium assembly
@@ -476,159 +280,59 @@ vennDiagram(vennCounts(cbind('Cell motility'    = row.names(varPart) %in% genes_
 
 ```{r cellmoti}
 goterm <- goterm_cellmoti
-genes  <- genes_cellmoti
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ### Cilium movement
 
 ```{r movement}
 goterm <- goterm_movement
-genes  <- genes_movement
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ### Cilium assembly
 
 ```{r assembly, fig.height=10, fig.width=10}
 goterm <- goterm_assembly
-genes  <- genes_assembly
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+```
 
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r assemblyVolcano}
+volcanoPlot()
 ```
 
 ## Proteasome-mediated ubiquitin-dependent protein catabolic process
 
 ```{r proteasome, fig.height=10, fig.weight=10}
 goterm <- 'GO:0043161'
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+```
 
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r proteasomeVolcano}
+volcanoPlot()
 ```
 
 ## Response to oxidative stress
 
 ```{r oxiestres, fig.height=8}
 goterm <- 'GO:0006979'
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
-plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])], c('regime', 'treatment', 'population', 'Residuals')])
+genes  <- getGenes(goterm)
+plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+```
 
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r oxiestresVolcano}
+volcanoPlot()
 ```
 
 # Molecular functions
@@ -636,38 +340,13 @@ ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
 
 ```{r motorBars, fig.height=15}
 goterm <- 'GO:0003774'
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r motorTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r motorPlot, fig.height=10}
-# I limit the number of genes.
-z2 <- z2[z2$adj.P.Val <= 0.1,]
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r motorVolcano}
+volcanoPlot()
 ```
 
 ## Peptidase activities: metallocarboxypeptidase activity, metalloendopeptidase activity, serine-type endopeptidase activity and calcium-dependent cysteine-type endopeptidase activity
@@ -693,186 +372,61 @@ vennDiagram(vennCounts(cbind(Metallocarboxy. = row.names(varPart) %in% genes_met
 
 ```{r metallocarboxypeptidase}
 goterm <- 'GO:0004181'
-Term(GOTERM[goterm])
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
-
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
 ### Serine-type endopeptidase activity
 
 ```{r serineBars, fig.height=10}
 goterm <- 'GO:0004252'
-Term(GOTERM[goterm])
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r serineTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r serinePlot, fig.height=10}
-z2 <- z2[z2$adj.P.Val <= 0.1,]     # only significantly regulated genes
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r serineVolcano}
+volcanoPlot()
 ```
 
 ### Calcium-dependent cysteine-type endopeptidase activity
 
 ```{r calciumBars, fig.height=8}
 goterm <- 'GO:0004198'
-Term(GOTERM[goterm])
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r calciumTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r calciumPlot, fig.height=8}
-z2 <- z2[z2$adj.P.Val <= 0.13,]     # only significantly regulated genes
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r calciumVolcano}
+volcanoPlot()
 ```
 
 ### Metalloendopeptidase activity
 
 ```{r metalloendoBars, fig.height=10}
 goterm <- 'GO:0004222'
-Term(GOTERM[goterm])
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 ```
 
-```{r metalloendoTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r metalloendoPlot, fig.height=8}
-z2 <- z2[z2$adj.P.Val <= 0.11,]     # only significantly regulated genes
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
+```{r metalloendoVolcano}
+volcanoPlot()
 ```
 
 ## oxidoreductase activity, acting on paired donors, with incorporation or reduction of molecular oxygen, reduced ascorbate as one donor, and incorporation of one atom of oxygen
 
 ```{r oxidoreductaseBars}
 goterm <- 'GO:0016715'
-Term(GOTERM[goterm])
-genes  <- names(fullAnnotation[grep(goterm, fullAnnotation, fixed=TRUE)])
-genes  <- genes[genes %in% row.names(varPart)]
+genes  <- getGenes(goterm)
 plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
-                        c('regime', 'treatment', 'population', 'Residuals')])
+                        c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
+volcanoPlot()
 ```
 
-```{r oxidoreductaseTab}
-z2 <- topTable(fitmm, coef='regime', number=length(fitmm$F))
-z2 <- z2[row.names(z2) %in% genes,]   # still ordered by p-value!
-reactable(z2,
-          columns = list(
-            logFC   = colDef(format=colFormat(digits=3)),
-            AveExpr = colDef(format=colFormat(digits=3)),
-            t       = colDef(format=colFormat(digits=3)),
-            P.Value = colDef(format=colFormat(digits=3)),
-            adj.P.Val = colDef (format=colFormat(digits=3)),
-            z.std   = colDef(format=colFormat(digits=3))
-          ))
-```
-
-```{r oxidoreductasePlot}
-#z2 <- z2[z2$adj.P.Val <= 0.11,]     # only significantly regulated genes
-z2 <- z2[order(z2$logFC),]
-z  <- as.data.frame(vobjDream$E)   # this is the whole expression matrix
-z <- z[row.names(z2),]
-z$gene <- factor(row.names(z), levels=row.names(z2), ordered=TRUE)
-GE <- pivot_longer(z, cols=c(1:12), names_to='sample', values_to='expression')
-GE$regime <- factor('regular', levels=c('regular', 'random'))
-GE[GE$sample %in% c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5", "X4A_S6", "X4C_S12"), 'regime'] <- 'random'
-ggplot(data=GE, mapping=aes(x=regime, y=expression, color=regime)) +
-  geom_boxplot() + facet_wrap(~gene) + ggtitle(Term(GOTERM[goterm]))
-```
 
 # Session info
 ```{r sessioninfo}
