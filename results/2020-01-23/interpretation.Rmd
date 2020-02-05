@@ -74,7 +74,9 @@ resemble those from comparisons between resting and non-resting (amictic) eggs
 We know that gene expression levels do not correlate with protein abundances [@Ziv2017].
 In dormant embryos, where translation is downregulated [@Ziv2017], this lack of correlation
 may be even more important. Many genes found to be expressed in dormant embryos may only
-be translated upon exit from dormancy.
+be translated upon exit from dormancy. From this point of view, differences in gene expression
+between regimes may not reflect a difference in the active functions at the moment of
+RNA extraction, but differences in the original provision.
 
 ```{r functions}
 # By using 'paste(goterm,collapse='|')', I can retrieve all genes annotated with any of a set of GO terms.
@@ -106,8 +108,8 @@ correspondance between genes and transcripts, which is found in `2019-07-10/tran
 # functional description strings may include the single quote character.
 interpro <- read.table(INTERPROSCAN, sep='\t', fill=TRUE, na.strings=c('-',''), quote='"',
                        colClasses=c('character','NULL','integer','factor','character','character',
-                                    'NULL','NULL','numeric','NULL','NULL','character','character','character'),
-                       col.names=c('transcript', NA, 'tsLength','analysis','acc','description', NA, NA,
+                                    'integer','integer','numeric','NULL','NULL','character','character','character'),
+                       col.names=c('transcript', NA, 'tsLength','analysis','acc','description', 'start', 'stop',
                                    'evalue', NA, NA,'IPacc','IPdescription','GO'))
 interpro$transcript <- substr(interpro$transcript, 1, 14)   # to remove the .p1, .p2... suffix.
 
@@ -139,7 +141,10 @@ volcanoPlot()
 ```
 
 The expression of NER genes is higher in dormant embryos from populations evolved in
-the unpredictable environment. No idea why. 
+the unpredictable environment. I do not find any similar result in the literature, so
+that the significance of this result is open to interpretation. However, it is one of
+the most significant and clear results, in addition to potentially being a new
+discovery.
 
 ## G protein-coupled receptor signaling pathway, and signal transduction
 
@@ -156,15 +161,9 @@ volcanoPlot()
 
 Among the `r length(genes)` genes in this category,
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'adj.P.Val'] <= 0.1)`
-have an adjusted p-value lower or equal to 0.1. There are too many genes annotated with
-this function to plot all their stratified expression levels. I select the most differentially
-expressed ones.
-
-Among the top `r length(genes)` genes analysed from the G protein-coupled receptor signaling pathway,
-`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] < 0)`
-have a reduced expression level in the unpredictable environment, and
-`r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
-show an increased expression level. Thus, in general we expect dormant eggs from populations
+have an adjusted p-value lower or equal to 0.1. Most of the genes in this pathway significantly
+regulated by selective regime, including the most significant ones, are underexpressed in the
+unpredictable regime (negative log fold change). Thus, in general we expect dormant eggs from populations
 under the unpredictable regime to be less sensitive to this particular pathway of
 signal transduction.
 
@@ -177,12 +176,11 @@ genes <- getGenes(goterm)
 volcanoPlot()
 ```
 
-`r length(genes)` genes are involved in signal transduction. 
-
-It seems that in general, signal transduction activity must be lower in resting
-eggs from populations under the unpredictable regime. This suggests that in
-unpredictable environments resting eggs rely less in (unreliable) environmental
-cues, and probably more in endogenous ones.
+When we look at all `r length(genes)` genes involved in signal transduction, we still see that
+most of them are underexpressed in the unpredictable regime, if differentially expressed at all.
+But the pattern is less clear, and some of these genes are also significantly overexpressed in
+the unpredictable regime. It is tempting to infer that dormant embryos from unpredictable
+environments are less sensitive to the unreliable external estimuli.
 
 ## Cell-matrix adhesion
 
@@ -200,7 +198,9 @@ have a reduced expression level in the unpredictable environment, and
 `r sum(topTable(fitmm, coef='regime', number=length(fitmm$F))[genes, 'logFC'] > 0)`
 show an increased expression level.
 
-Cell-matrix adhesion is likely related to embryonic development.
+Cell-matrix adhesion is likely related to embryonic development. The difference in expression
+of genes in this pathway between regimes makes more sense from the perspective of the
+expected difference in their current physiological state.
 
 ## Potassium ion transport, carboxylic acid transport, and ion transmembrane transport
 Several functions related to ion transport are significant. I wonder to what extent their significance is not
@@ -213,11 +213,11 @@ goterm_Sulf <- 'GO:0008272'
 goterm_Nucl <- 'GO:1901642'
 goterm_TM   <- 'GO:0034220'
 
-genes_K    <- names(fullAnnotation[grep(goterm_K,    fullAnnotation, fixed=TRUE)])
-genes_COOH <- names(fullAnnotation[grep(goterm_COOH, fullAnnotation, fixed=TRUE)])
-genes_Sulf <- names(fullAnnotation[grep(goterm_Sulf, fullAnnotation, fixed=TRUE)])
-genes_Nucl <- names(fullAnnotation[grep(goterm_Nucl, fullAnnotation, fixed=TRUE)])
-genes_TM   <- names(fullAnnotation[grep(goterm_TM,   fullAnnotation, fixed=TRUE)])
+genes_K    <- getGenes(goterm_K)
+genes_COOH <- getGenes(goterm_COOH)
+genes_Sulf <- getGenes(goterm_Sulf)
+genes_Nucl <- getGenes(goterm_Nucl)
+genes_TM   <- getGenes(goterm_TM)
 
 vennDiagram(vennCounts(cbind(Potassium     = row.names(varPart) %in% genes_K,
                              Carboxilic    = row.names(varPart) %in% genes_COOH,
@@ -232,9 +232,6 @@ each term should be quite independent of the significance of any other term. Thi
 of functional enrichment applied algorithms to account for the dependence structure among GO terms. I analyse them
 separately, below.
 
-In summary, most genes involved in ion transport, and also those involved in nucleoside transport,
-are expressed at lower levels in resting eggs from populations submitted to the random regime.
-
 ### Potassium ion transport
 
 ```{r potassiumBars, fig.height=10}
@@ -247,6 +244,9 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 ```{r potassiumVolcano}
 volcanoPlot()
 ```
+
+This biological process is defined as "`r Definition(GOTERM[goterm])`". There are `r length(genes)`
+in the analysis with this annotation. The pattern is not very consistent.
 
 ### Ion transmembrane transport
 
@@ -261,6 +261,11 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+Ion transmembrane transport is an even larger and more general term. One gene sticks out
+with a log fold change close to -4. This gene is XLOC_005433. It has homology to the
+neurotransmitter-gated ion-channel ligand-binding domain, and to the nicotinic acetylcoline
+receptor.
+
 ### Nucleoside transmembrane transport
 
 ```{r nucleoside}
@@ -271,6 +276,10 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+The most significant gene in this subset is XLOC_035757, an equilibrative nucleoside transporter
+slightly more expressed in unpredictable than in predictable environment. Significant only with
+FDR 0.091.
+
 ### Carboxylic acid transport
 
 ```{r COOH}
@@ -280,6 +289,10 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
                         c('regime', 'treatment', 'population', 'regime:treatment', 'Residuals')])
 volcanoPlot()
 ```
+
+The two most significant genes here, XLOC_017768 and XLOC_017784, are slightly upregulated in the
+unpredictable environment. The former seems to be an amino acid permease, and the latter, a phospholipase
+A2. Both include a short predicted intrinsically disordered region. 
 
 ## Trehalose biosynthetic process
 
@@ -301,7 +314,8 @@ Adult individuals of *B. plicatilis* have a crown of cilia. Thus, the expression
 and probably also those for cilium movement and cell motility in the embryo must be related to embryonic
 development. They are, thus a sign that the embryos are leaving the dormant state and resuming metabolism.
 Under this light, it makes sense that eggs from a regular environment express these genes more than eggs from
-the unpredictable environment, because most of the former must be getting ready to hatch.
+the unpredictable environment, because most of the former must be getting ready to hatch. The higher expression
+level in predictable environments is a clear pattern in genes involved in all three of these processes.
 
 Dr. Roger has actually observed embryo movement in many of the eggs from
 the predictable regime after 30 hours of exposure to hatching conditions (personal
@@ -368,36 +382,14 @@ volcanoPlot()
 ```
 
 It is unclear why preteasome-mediated protein degradation should be more or less active in one or
-the other regime. And the patter is actually not consistent: two genes from this pathway are quite
+the other regime. And the pattern is actually not consistent: two genes from this pathway are quite
 significantly (but not very much) more expressed in the unpredictable than in the regular environment.
 But several other genes in the pathway are less significantly, but to a higher degree underexpressed
-in the unpredictable regime. A fruitful interpretation may require individual inspection of those genes.
-
-```{r proteasomeGenes}
-z <- topTable(fitmm, coef='regime', number=length(fitmm$F), p.value=0.1)
-z <- z[row.names(z) %in% genes,]
-PosLFC <- row.names(z[z$logFC > 0,])
-NegLFC <- row.names(z[z$logFC < 0,])
-zRandom <- unique(c(showFunctions(PosLFC)[,'description'],
-                    showFunctions(PosLFC)[,'IPdescription']))
-
-zRegular <- unique(c(showFunctions(NegLFC)[,'description'],
-                     showFunctions(NegLFC)[,'IPdescription']))
-```
-
-Among the `r dim(z)[1]` most significantly differentially expressed genes presumably
-involved in the `r Term(GOTERM[goterm])`, the `r length(PosLFC)` that are overexpressed
-in the unpredictable environment encode some protein domains that are
-not found among the `r length(NegLFC)` genes overexpressed in the regular regime; namely:
-`r paste(zRandom[!zRandom %in% zRegular], collapse=', ')`.
-
-Likewise, among the genes involved in this biological process that are overexpressed in
-the regular environment, we see the following protein domains encoded: 
-`r paste(zRegular[!zRegular %in% zRandom], collapse=', ')`.
+in the unpredictable regime. 
 
 ## Response to oxidative stress
 Oxidative stress is one of the threats faced by dormant embryos, and protection against it is one
-of the classic hallmarks of dormancy [@Clark2012,@Ziv2017]. 
+of the classic hallmarks of dormancy [@Clark2012, @Ziv2017]. 
 
 ```{r oxiestres, fig.height=8}
 goterm <- 'GO:0006979'
@@ -411,28 +403,8 @@ volcanoPlot()
 ```
 
 In this case again, the differential expression does not have the same sign in all genes from
-this category that are regulated by the selective regime.
-
-```{r oxiestresGenes}
-z <- topTable(fitmm, coef='regime', number=length(fitmm$F), p.value=0.1)
-z <- z[row.names(z) %in% genes,]
-PosLFC <- row.names(z[z$logFC > 0,])
-NegLFC <- row.names(z[z$logFC < 0,])
-zRandom <- unique(c(showFunctions(PosLFC)[,'description'],
-                    showFunctions(PosLFC)[,'IPdescription']))
-
-zRegular <- unique(c(showFunctions(NegLFC)[,'description'],
-                     showFunctions(NegLFC)[,'IPdescription']))
-```
-
-Among the `r length(genes)` annotated with the term for `r Term(GOTERM[goterm])`, only
-`r dim(z)[1]` are significantly regulated by the selective regime at 0.1 FDR:
-`r length(PosLFC)` upregulated in the unpredictable regime, and
-`r length(NegLFC)` upregulated in the regular regime. The protein domains encoded in
-the former but not in the latter are: `r paste(zRandom[!(zRandom %in% zRegular)], collapse=', ')`.
-
-And found only in the genes overexpressed in the regular environment, we have:
-`r paste(zRegular[!(zRegular %in% zRandom)])`.
+this category that are regulated by the selective regime. It looks as if eggs in different
+regimes use different sets of genes to protect themselves against oxidative stress.
 
 # Molecular functions
 ## Motor activity
