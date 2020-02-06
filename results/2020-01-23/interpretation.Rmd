@@ -69,7 +69,7 @@ eggs are expected to be leaving the dormancy stage and resuming metabolism, deve
 and hatching. The portion of eggs getting ready to hatch is known to be larger (actually,
 a majority) in populations from regular environments. Thus, some of our results could
 resemble those from comparisons between resting and non-resting (amictic) eggs
-[@Ziv2017, @Rozema2019].
+[@Ziv2017; @Rozema2019].
 
 We know that gene expression levels do not correlate with protein abundances [@Ziv2017].
 In dormant embryos, where translation is downregulated [@Ziv2017], this lack of correlation
@@ -317,7 +317,7 @@ Under this light, it makes sense that eggs from a regular environment express th
 the unpredictable environment, because most of the former must be getting ready to hatch. The higher expression
 level in predictable environments is a clear pattern in genes involved in all three of these processes.
 
-Dr. Roger has actually observed embryo movement in many of the eggs from
+Dr. Garcia Roger has actually observed embryo movement in many of the eggs from
 the predictable regime after 30 hours of exposure to hatching conditions (personal
 communication).
 
@@ -423,10 +423,16 @@ volcanoPlot()
 The three most significant genes here are overexpressed in eggs from the unpredictable
 environment, which seems to contrast the results for biological processes of cell motility
 and cilium movement. However, `r Term(GOTERM[goterm])` is defined as
-`r Definition(GOTERM[goterm])`. Only `r sum(getGenes(goterm) %in% getGenes('GO:0003341'))`
-genes involved in `r Term(GOTERM[goterm])` is also involved in `r Term(GOTERM['GO:0003341'])`.
+`r Definition(GOTERM[goterm])` Only `r sum(getGenes(goterm) %in% getGenes('GO:0003341'))`
+of the genes involved in `r Term(GOTERM[goterm])` is also involved in `r Term(GOTERM['GO:0003341'])`.
+These are genes mostly involved in internal movements, and probably abundant in muscles,
+with homology to dynein, kinesin and myosine domains.
 
 ## Peptidase activities: metallocarboxypeptidase activity, metalloendopeptidase activity, serine-type endopeptidase activity and calcium-dependent cysteine-type endopeptidase activity
+
+Protein catabolism must be a source of amino acids for development, after dormancy. It is not surprising
+to see below that most peptidase activities are clearly downregulated in eggs from the unpredictable
+regime, where a larger portion of eggs were to remain in dormancy.
 
 ```{r peptidase}
 goterm_metallocarboxy <- 'GO:0004181'
@@ -455,6 +461,11 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+This activity consists on: `r Definition(GOTERM[goterm])`
+Among the `r length(genes)` genes ascribed to this activity in the analysis, only 8 are significantly
+regulated by selective regime at FDR 0.1, and all them are underexpressed in the unpredictable
+environment. 
+
 ### Serine-type endopeptidase activity
 
 ```{r serineBars, fig.height=10}
@@ -467,6 +478,9 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 ```{r serineVolcano}
 volcanoPlot()
 ```
+
+Out of 88 genes ascribed to this activity, 33 are significantly regulated at FDR 0.1, and
+30 of those are downregulated in the unpredictable regime. 
 
 ### Calcium-dependent cysteine-type endopeptidase activity
 
@@ -481,6 +495,8 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+In contrast with previous types of peptidases, no clear pattern is seen in this one.
+
 ### Metalloendopeptidase activity
 
 ```{r metalloendoBars, fig.height=10}
@@ -494,6 +510,9 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+At FDR 0.1, 19 genes ascribed to this activity are underexpressed in the unpredictable
+environment, and only 4 are overexpressed in the unpredictable environment. 
+
 ## oxidoreductase activity, acting on paired donors, with incorporation or reduction of molecular oxygen, reduced ascorbate as one donor, and incorporation of one atom of oxygen
 
 ```{r oxidoreductaseBars}
@@ -504,6 +523,10 @@ plotPercentBars(varPart[genes[order(-varPart[genes, 'regime'])],
 volcanoPlot()
 ```
 
+All 7 genes significantly regulated by regime are underexpressed in the unpredictable environment.
+It does not look that these genes' products protect from oxidative stress. Rather, they seem to
+catalyse redox reactions in some pathways, such as the conversion of dopamine in norepinephrine
+(in humans?).
 
 # Session info
 ```{r sessioninfo}
