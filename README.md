@@ -25,6 +25,10 @@ conda create --name Brachionus --file spec-file.txt
 Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
+# 2020-01-28
+Little attention is usually paid at the difference in variance of expression levels among
+conditions. This is just a first exploration, out of curiosity. See the report
+[here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-01-28/variation.html).
 
 # 2020-01-23
 The functional enrichment analysis produced a list of gene ontology terms that don't always
