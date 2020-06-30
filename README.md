@@ -25,6 +25,10 @@ conda create --name Brachionus --file spec-file.txt
 Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
+
+# 2020-06-29
+Edu advanced the article writing, and we need some figures slightly modified.
+
 # 2020-01-28
 Little attention is usually paid at the difference in variance of expression levels among
 conditions. This is just a first exploration, out of curiosity. See the report
