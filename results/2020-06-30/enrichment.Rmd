@@ -1,0 +1,440 @@
+---
+title: "Functional enrichment analysis"
+output: html_document
+author: "J. Ignacio Lucas Lledó"
+params:
+   TAG: 'genes'
+   VAR: 'regime'
+bibliography: enrichment.bib
+---
+
+```{r setup, message=FALSE}
+library(topGO)
+library(knitr)   # to use kable()
+library(limma)   # to use vennDiagram()
+library(ggplot2)
+library(variancePartition)
+TAG <- params$TAG
+VAR <- params$VAR
+ANNOTATION <- list(genes = '../2019-07-26/genes/annotation.txt',
+                   isoforms = '../2019-07-26/transcripts/annotation.txt')
+DGEDIR <- '../2020-01-08/'
+ENRICHMENT <- paste('../2020-01-14/Enrichment', TAG, VAR, 'RData', sep='.')
+```
+
+# Introduction
+This is the enrichment analysis for `r TAG` regulated by `r VAR`. I am using the 
+`topGO` package [@Alexa2019], which is able to apply different algorithms. The starting point
+is an ordering of `r TAG` usually according to their association with a phenotype or
+any other relevant quantity, such as a measure of differential expression between
+two conditions. In this case, we order `r TAG` by their differential expression
+between `r VAR` levels. Following one of the suggestions in the manual, I originally
+ordered `r TAG` by either $p$ value of the differential expression analysis, or by
+the (complement of the) amount of its expression variance explained by `r VAR`
+(see `2020-01-14`). Those were quite equivalent orderings. However, they do not
+distinguish the sign of the fold change: both up- and down-regulated genes contribute
+to make a gene ontology term significant. It is one of the approaches recommended,
+and it makes sense, to the extent that among all the genes annotated with a function,
+some may display contrasting expression patterns, for example if both positive and
+negative regulators of that function are annotated with the same label. I thus,
+expect the use of $p$ values in enrichment analysis to facilitate the detection of
+high level categories. 
+
+In contrast, genes sharing lower level categories (very specific GO terms) 
+are more likely to be expressed in a similar way. Then, an ordering of genes that
+reflect the sign of the difference in expression levels between the two conditions
+compared would be more informative. In principle, enrichment methods should be able
+to detect an enrichment in either end of the list, rather than only in the top.
+That is actually the case for tests based on the Kolmogorov-Smirnov distribution,
+like GSEA [@Subramanian2005]. I actually checked that reversing the order of genes
+produces the exact same results, as expected. Below, I use the Kolmogorov-Smirnov
+test.
+
+For gene ordering, I use the $t$ statistic of the differential expression analysis,
+which is positive when expression is higher in the random than in the regular regime,
+and vice versa.
+
+# Reading the data
+Functional annotation is in `2019-07-26`. I will also upload two lists of `r TAG`,
+with either proportion of variance explained by `r VAR` or p-value of differential
+expression test.
+
+```{r data}
+load(paste0(DGEDIR, TAG, '.RData'))
+tagTStat    <- topTable(fitmm, coef = VAR, num = length(fitmm$F), sort.by='t', resort.by='t')[,'t',drop=FALSE]
+annotation  <- read.table(ANNOTATION[[TAG]], col.names = c('tagname', 'goterms'))
+```
+
+To initialize the `topGOdata` object, I need the gene list as a named numeric vector,
+where the names are the `r TAG` identifiers and the numeric values, the $t$ statistics
+from the differential expression analysis. The `structure()` function adds attributes
+to an object.
+
+```{r scores}
+TStats <- structure(tagTStat[,1], names = row.names(tagTStat))
+rm(tagTStat)
+```
+
+There are `r length(TStats)` `r TAG` scored with a $t$ statistic.
+The `annotation` data frame has more than one GO term for every tag, separated by `|`.
+I need a named list.
+
+```{r annotation}
+head(annotation)
+allgenes2GO <- strsplit(as.character(annotation$goterms), "|", fixed = TRUE)
+names(allgenes2GO) <- annotation$tagname
+rm(annotation)
+```
+
+There are `r length(allgenes2GO)` `r TAG` with GO annotations. But the differential expression
+analysis includes many more `r TAG`. In order to include the not-annotated `r TAG` in the
+enrichment analysis, to see if annotated or not annotated `r TAG` are more or less often
+differentially expressed, I should attribute a GO term to them. According to [http://geneontology.org/docs/faq/]
+nowadays we express lack of annotation by annotating to the root nodes, i.e. GO:0008150 biological_process,
+GO:0003674 molecular_function, and GO:0005575 cellular_component.
+
+```{r unknown}
+for (tag in names(TStats)) {
+   if (! tag %in% names(allgenes2GO)) {
+      allgenes2GO <- append(allgenes2GO,
+         structure(list(c("GO:0008150", "GO:0003674", "GO:0005575")), names = tag))
+   }
+}
+```
+
+# Building the topGO object
+
+Creation of a topGO dataset is documented in section 4 of topGO's the user manual:
+https://bioconductor.org/packages/release/bioc/vignettes/topGO/inst/doc/topGO.pdf.
+I need to use the `new`
+command, and fill up the slots. The `annot` object must be a function that compiles "a list of
+GO terms such that each element in the list is a character vector containing all the gene 
+identifiers that are mapped to the respective GO term." There are several options, that you can
+check using `help(annFUN.gene2GO)`, for example. The `annFUN.gene2GO` requires a `gene2GO`
+argument, which is the list of gene-to-GO terms I made before. The `geneSelectionFun` object is a
+function that selects the *interesting* (most significant) genes. It is required to
+perform Fisher's exact test. The `nodeSize` is used to prune the GO hierarchy from the terms
+which have less than `n` annotated genes.
+
+I generate three datasets, to analyse each of the three ontologies.
+
+```{r GOdata1, results = 'hold', message = FALSE}
+selection <- function(allScores) {return(abs(allScores) > 5.0)}
+GOdata.BP <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'BP', 
+   allGenes = TStats,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+GOdata.MF <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'MF',
+   allGenes = TStats,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+GOdata.CC <- new('topGOdata',
+   description = 'Differential expression among Brachionus plicatilis populations.',
+   ontology = 'CC',
+   allGenes = TStats,
+   annot = annFUN.gene2GO,
+   gene2GO = allgenes2GO,
+   geneSelectionFun = selection,
+   nodeSize = 5)
+
+DataSummary <- data.frame(ontology = c('BP', 'MF', 'CC'),
+   Num_Genes = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), numGenes),
+   Num_GO_terms = sapply(list(GOdata.BP, GOdata.MF, GOdata.CC), function(x) length(usedGO(x))))
+kable(DataSummary, caption='Number of feasible genes or transcripts and number of GO terms used in each data set.')
+rm(DataSummary)
+```
+
+# Running the tests
+
+There are more than one way to test for enrichment. Something that took me a while to understand
+is that not only there are different test statistics (Fisher's exact test, Kolmogorov-Smirnov,
+and others) but also different *algorithms*: classic, elim, weight... The algorithms are ways
+to deal with the dependence structure among GO terms due to topology. Some algorithms are
+compatible with all statistics implemented in topGO. But the *weight* and the *parentchild*
+algorithms are only applicable to Fisher's exact test. I am not interested in the classic
+algorithm, which treats GO nodes as independent, and therefore produces an excess of significant
+results. I will not use the Fisher's exact test, because it dependes on an arbitrary threshold
+of significance on non-adjusted p-values.
+
+```{r testing1, message = FALSE}
+BP.elim     <- runTest(GOdata.BP, algorithm = "elim",     statistic = "ks")
+BP.weight01 <- runTest(GOdata.BP, algorithm = "weight01", statistic = "ks")
+BP.lea      <- runTest(GOdata.BP, algorithm = "lea",      statistic = "ks")
+MF.elim     <- runTest(GOdata.MF, algorithm = "elim",     statistic = "ks")
+MF.weight01 <- runTest(GOdata.MF, algorithm = "weight01", statistic = "ks")
+MF.lea      <- runTest(GOdata.MF, algorithm = "lea",      statistic = "ks")
+CC.elim     <- runTest(GOdata.CC, algorithm = "elim",     statistic = "ks")
+CC.weight01 <- runTest(GOdata.CC, algorithm = "weight01", statistic = "ks")
+CC.lea      <- runTest(GOdata.CC, algorithm = "lea",      statistic = "ks")
+
+ResultsSummary <- data.frame(ontology = rep(c("BP", "MF", "CC"), each = 3),
+   algorithm = rep(c("elim", "weight01", "lea"), 3),
+   TermsTested = sapply(list(BP.elim, BP.weight01, BP.lea, MF.elim, MF.weight01, MF.lea, CC.elim, CC.weight01, CC.lea), function(X) length(score(X))),
+   Significant = sapply(list(BP.elim, BP.weight01, BP.lea, MF.elim, MF.weight01, MF.lea, CC.elim, CC.weight01, CC.lea), function(X) sum(score(X) < 0.01)))
+
+kable(ResultsSummary, caption="Number of non-trivial terms tested and those with a score (not corrected p-value) lower than 0.01.")
+rm(ResultsSummary)
+```
+
+# Results
+
+I don't see a way to distinguish GO terms that are significant because they tend to
+appear near the top of the list of genes from those that are significant because they
+tend to appear near the bottom. The density plots are useful, but take too much space
+to show them for all terms.
+
+Note that not all terms listed in the tables below are significant. The scores for
+the three methods (elim, weight01 and lea) are non-corrected p-values.
+
+## Biological process
+
+```{r BP1, message=FALSE}
+orderedTerms <- names(sort(score(BP.weight01)))
+significant.weight01 <- score(BP.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(BP.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(BP.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+BP.tstat.sigTerms <- sigTerms
+
+BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+
+kable(
+   BP.all[BP.all$Significant > BP.all$Expected,],
+   caption = "Most over-represented terms of the Biological Process ontology.")
+
+kable(
+   BP.all[BP.all$Significant < BP.all$Expected,],
+   caption = "Most under-represented terms of the Biological Process ontology.")
+
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term = Term(GOTERM[sigTerms]),
+                 Definition = Definition(GOTERM[sigTerms]),
+                 PValue=score(BP.weight01)[sigTerms]),
+      caption = paste('Biological process terms significantly associated with',
+                      VAR, 'according to all 3 algorithms', sep=' '))
+```
+
+I think the GO graph is useful to see the relationship among the significant terms. But
+too large graphs are impossible to read. I don't know how to split the graph in meaningful
+subgraphs.
+
+```{r BP1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.BP, score(BP.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+This is just a example of the most significant GO term:
+
+```{r BP1density, message=FALSE}
+showGroupDensity(GOdata.BP, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.BP, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.BP, orderedTerms[3], rm.one=FALSE)
+```
+
+## Molecular function
+
+```{r MF1, message=FALSE}
+orderedTerms <- names(sort(score(MF.weight01)))
+significant.weight01 <- score(MF.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(MF.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(MF.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+MF.tstat.sigTerms <- sigTerms
+
+MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+
+kable(
+   MF.all[MF.all$Significant > MF.all$Expected,],
+   caption = "Most over-represented terms of the Molecular Function ontology.")
+
+kable(
+   MF.all[MF.all$Significant < MF.all$Expected,],
+   caption = "Most under-represented terms of the Molecular Function ontology.")
+
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(MF.weight01)[sigTerms]),
+      caption = paste('Molecular function terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r MF1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.MF, score(MF.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+```{r MF1density, message=FALSE}
+showGroupDensity(GOdata.MF, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.MF, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.MF, orderedTerms[3], rm.one=FALSE)
+```
+
+## Cellular component
+
+```{r CC1, message=FALSE}
+orderedTerms <- names(sort(score(CC.weight01)))
+significant.weight01 <- score(CC.weight01)[orderedTerms] <= 0.01
+significant.lea      <- score(CC.lea)[orderedTerms] <= 0.01
+significant.elim     <- score(CC.elim)[orderedTerms] <= 0.01
+sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
+# sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
+CC.tstat.sigTerms <- sigTerms
+
+CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea,
+                   orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+kable(
+   CC.all[CC.all$Significant > CC.all$Expected,],
+   caption = "Most over-represented terms of the Cellular Component ontology.")
+
+kable(
+   CC.all[CC.all$Significant < CC.all$Expected,],
+   caption = "Most under-represented terms of the Cellular Component ontology.")
+
+vennDiagram(vennCounts(cbind(weight01=significant.weight01,
+                             lea=significant.lea,
+                             elim=significant.elim)))
+
+kable(data.frame(Term=Term(GOTERM[sigTerms]),
+                 Definition=Definition(GOTERM[sigTerms]),
+                 PValue=score(CC.weight01)[sigTerms]),
+      caption = paste('Cellular component terms significantly associated with', VAR,
+                      'according to all 3 algorithms', sep=' '))
+```
+
+```{r CC1dag, message=FALSE, fig.width=30, fig.height=15}
+showSigOfNodes(GOdata.CC, score(CC.weight01),
+               firstSigNodes = sum(significant.elim),
+               wantedNodes = sigTerms)
+```
+
+```{r CC1density, message=FALSE}
+showGroupDensity(GOdata.CC, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.CC, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.CC, orderedTerms[3], rm.one=FALSE)
+```
+
+# Comparison between the two ordering of genes
+
+I want to compare these results with those from `2020-01-14`, where I used
+the $p$ value of the differential expression analysis to order the genes.
+I can import the data from `2020-01-14`, but I need to do it in a new
+environment to prevent overwriting the current results.
+
+```{r newEnv}
+load(ENRICHMENT, ex <- new.env())
+```
+
+## Biological process
+
+```{r BPcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.BP)
+BP.pvalue.sigTerms <- with(ex, BP.pvalue.sigTerms)
+vennDiagram(vennCounts(cbind(TStat  = allTerms %in% BP.tstat.sigTerms,
+                             PValue = allTerms %in% BP.pvalue.sigTerms)))
+# New terms:
+as.data.frame(Term(GOTERM[setdiff(BP.tstat.sigTerms, BP.pvalue.sigTerms)]))
+
+# Absent terms:
+as.data.frame(Term(GOTERM[setdiff(BP.pvalue.sigTerms, BP.tstat.sigTerms)]))
+
+BPp.weight01 <- with(ex, BP.weight01)
+ggplot(data = data.frame(TStat  = rank(score(BP.weight01))[allTerms],
+                         PValue = rank(score(BPp.weight01))[allTerms]),
+       mapping = aes(x = TStat, y = PValue)) +
+   geom_point() + geom_smooth() + xlab('Using gene t statistics') +
+   ylab('Using gene p values') +
+   ggtitle('Ordering of BP terms by significance')
+```
+
+## Molecular function
+
+```{r MFcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.MF)
+MF.pvalue.sigTerms <- with(ex, MF.pvalue.sigTerms)
+vennDiagram(vennCounts(cbind(TStat  = allTerms %in% MF.tstat.sigTerms,
+                             PValue = allTerms %in% MF.pvalue.sigTerms)))
+# New terms:
+as.data.frame(Term(GOTERM[setdiff(MF.tstat.sigTerms, MF.pvalue.sigTerms)]))
+
+# Absent terms:
+as.data.frame(Term(GOTERM[setdiff(MF.pvalue.sigTerms, MF.tstat.sigTerms)]))
+
+MFp.weight01 <- with(ex, MF.weight01)
+ggplot(data = data.frame(TStat  = rank(score(MF.weight01))[allTerms],
+                         PValue = rank(score(MFp.weight01))[allTerms]),
+       mapping = aes(x = TStat, y = PValue)) +
+   geom_point() + geom_smooth() + xlab('Using gene t statistics') +
+   ylab('Using gene p values') +
+   ggtitle('Ordering of MF terms by significance')
+```
+
+## Cellular component
+
+```{r CCcomparison, message=FALSE}
+allTerms <- usedGO(GOdata.CC)
+CC.pvalue.sigTerms <- with(ex, CC.pvalue.sigTerms)
+vennDiagram(vennCounts(cbind(TStat  = allTerms %in% CC.tstat.sigTerms,
+                             PValue = allTerms %in% CC.pvalue.sigTerms)))
+# New terms:
+as.data.frame(Term(GOTERM[setdiff(CC.tstat.sigTerms, CC.pvalue.sigTerms)]))
+
+# Absent terms:
+as.data.frame(Term(GOTERM[setdiff(CC.pvalue.sigTerms, CC.tstat.sigTerms)]))
+
+CCp.weight01 <- with(ex, CC.weight01)
+ggplot(data = data.frame(TStat  = rank(score(CC.weight01))[allTerms],
+                         PValue = rank(score(CCp.weight01))[allTerms]),
+       mapping = aes(x = TStat, y = PValue)) +
+   geom_point() + geom_smooth() + xlab('Using gene t statistics') +
+   ylab('Using gene p values') +
+   ggtitle('Ordering of CC terms by significance')
+```
+
+As expected, ordering genes by the $t$ statistic produces results different from
+those when ordering genes by $p$ value. Some GO terms enriched when using $p$ values
+are missed when using $t$ statistic, typically because those terms are assigned
+to genes both sub- and overexpressed. See for example the case of the protein
+phosphorylation process:
+
+```{r snake}
+showGroupDensity(GOdata.BP, 'GO:0006468', rm.one=FALSE)
+```
+
+Both the genes annotated with that function and their complement display a
+snake-shaped, bimodal distribution, the former being more extreme. It is not
+irrelevant, but more difficult to interprete than a term being significant
+because all their genes behave in a similar way.
+
+# Session info
+
+```{r last}
+save(allgenes2GO,
+     GOdata.BP, BP.elim, BP.weight01, BP.lea, BP.pvalue.sigTerms,
+     GOdata.MF, MF.elim, MF.weight01, MF.lea, MF.pvalue.sigTerms,
+     GOdata.CC, CC.elim, CC.weight01, CC.lea, CC.pvalue.sigTerms,
+     file = paste('Enrichment', TAG, VAR, 'RData', sep='.'))
+sessionInfo()
+```
