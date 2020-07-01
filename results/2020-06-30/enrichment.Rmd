@@ -211,12 +211,8 @@ BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 
 kable(
-   BP.all[BP.all$Significant > BP.all$Expected,],
-   caption = "Most over-represented terms of the Biological Process ontology.")
-
-kable(
-   BP.all[BP.all$Significant < BP.all$Expected,],
-   caption = "Most under-represented terms of the Biological Process ontology.")
+   BP.all[BP.all$GO.ID %in% sigTerms,],
+   caption = "Most significant terms of the Biological Process ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -262,12 +258,8 @@ MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 
 kable(
-   MF.all[MF.all$Significant > MF.all$Expected,],
-   caption = "Most over-represented terms of the Molecular Function ontology.")
-
-kable(
-   MF.all[MF.all$Significant < MF.all$Expected,],
-   caption = "Most under-represented terms of the Molecular Function ontology.")
+   MF.all[MF.all$GO.ID %in% sigTerms,],
+   caption = "Most significant terms of the Molecular Function ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -306,12 +298,8 @@ CC.tstat.sigTerms <- sigTerms
 CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 kable(
-   CC.all[CC.all$Significant > CC.all$Expected,],
-   caption = "Most over-represented terms of the Cellular Component ontology.")
-
-kable(
-   CC.all[CC.all$Significant < CC.all$Expected,],
-   caption = "Most under-represented terms of the Cellular Component ontology.")
+   CC.all[CC.all$GO.ID %in% sigTerms,],
+   caption = "Most significant terms of the Cellular Component ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,

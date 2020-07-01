@@ -26,6 +26,22 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-06-30
+When re-doing some figures I realized that in the enrichment analysis done in 2020-01-14
+I used an ordering of genes based on either p value of differential expression or amount
+of expression variance explained by the factor of interest (selective regime). Both orderings
+are quite equivalent and valid. However, those are "folded" orderings, in the sense that
+genes in the top may be very significant for contrasting reasons: sub- or overexpression in
+one of the levels. It would also be informative to *unfold* the order of genes to have
+opposite expression patterns in opposite ends of the gene list. That would produce
+different, also valid, results with the advantage of being more easily interpretable.
+Here I order genes by the *t* statistic of the gene expression analysis. Negative values of
+*t* mean higher expression in the regular (predictable) environment, and positive *t*
+implies higher expression in the random environment.
+
+Only a subset of the GO terms found significant in `2020-01-14` retain significance
+here. And some new categories appear significant. See the report [here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-06-30/enrichment.html)
+
 # 2020-06-29
 Edu advanced the article writing, and we need some figures slightly modified.
 
