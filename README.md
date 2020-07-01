@@ -39,8 +39,7 @@ Here I order genes by the *t* statistic of the gene expression analysis. Negativ
 *t* mean higher expression in the regular (predictable) environment, and positive *t*
 implies higher expression in the random environment.
 
-Only a subset of the GO terms found significant in `2020-01-14` retain significance
-here. And some new categories appear significant. See the report [here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-06-30/enrichment.html)
+See the report [here](https://htmlpreview.github.io/?https://github.com/IgnasiLucas/Brachionus/blob/master/results/2020-06-30/enrichment.html)
 
 # 2020-06-29
 Edu advanced the article writing, and we need some figures slightly modified.
