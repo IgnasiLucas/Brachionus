@@ -214,7 +214,9 @@ showSigOfNodes(GOdata.BP, score(BP.weight01),
 This is just a example of the most significant GO term:
 
 ```{r BP1density, message=FALSE}
-showGroupDensity(GOdata.BP, names(score(BP.weight01))[which.min(score(BP.weight01))])
+showGroupDensity(GOdata.BP, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.BP, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.BP, orderedTerms[3], rm.one=FALSE)
 ```
 
 ### Molecular function
@@ -257,7 +259,9 @@ showSigOfNodes(GOdata.MF, score(MF.weight01),
 ```
 
 ```{r MF1density, message=FALSE}
-showGroupDensity(GOdata.MF, names(score(MF.weight01))[which.min(score(MF.weight01))])
+showGroupDensity(GOdata.MF, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.MF, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.MF, orderedTerms[3], rm.one=FALSE)
 ```
 
 ### Cellular component
@@ -299,7 +303,9 @@ showSigOfNodes(GOdata.CC, score(CC.weight01),
 ```
 
 ```{r CC1density, message=FALSE}
-showGroupDensity(GOdata.CC, names(score(CC.weight01))[which.min(score(CC.weight01))])
+showGroupDensity(GOdata.CC, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdata.CC, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdata.CC, orderedTerms[3], rm.one=FALSE)
 ```
 
 # Using the portion of variance explained by `r VAR`
@@ -418,7 +424,9 @@ Below I plot variance portion, but for the termo found most significant when usi
 p-values, for comparison.
 
 ```{r BP2density, message=FALSE}
-showGroupDensity(GOdataVar.BP, names(score(BP.weight01))[which.min(score(BP.weight01))])
+showGroupDensity(GOdataVar.BP, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdataVar.BP, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdataVar.BP, orderedTerms[3], rm.one=FALSE)
 ```
 
 ### Molecular function
@@ -462,7 +470,9 @@ showSigOfNodes(GOdataVar.MF, score(MFvar.weight01),
 I plot variance portion, but for the term found most significant when using p-values, for comparison.
 
 ```{r MF2density, message=FALSE}
-showGroupDensity(GOdataVar.MF, names(score(MF.weight01))[which.min(score(MF.weight01))])
+showGroupDensity(GOdataVar.MF, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdataVar.MF, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdataVar.MF, orderedTerms[3], rm.one=FALSE)
 ```
 
 ### Cellular component
@@ -510,7 +520,9 @@ showSigOfNodes(GOdataVar.CC, score(CCvar.weight01),
 For comparison, I plot the distribution of variance portion for the CC term found most significant when using p-values.
 
 ```{r CC2density, message=FALSE}
-showGroupDensity(GOdataVar.CC, names(score(CC.weight01))[which.min(score(CC.weight01))])
+showGroupDensity(GOdataVar.CC, orderedTerms[1], rm.one=FALSE)
+showGroupDensity(GOdataVar.CC, orderedTerms[2], rm.one=FALSE)
+showGroupDensity(GOdataVar.CC, orderedTerms[3], rm.one=FALSE)
 ```
 
 # Comparison between the two ordering of genes.
@@ -524,7 +536,7 @@ vennDiagram(vennCounts(cbind(PValue   = allTerms %in% BP.pvalue.sigTerms,
 ggplot(data = data.frame(PValue   = rank(score(BP.weight01))[allTerms],
                          Variance = rank(score(BPvar.weight01))[allTerms]),
        mapping = aes(x = PValue, y = Variance)) +
-   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   geom_point() + geom_smooth(method='lm') + xlab('Using gene p-values') +
    ylab('Using portion of explained variance') +
    ggtitle('Ordering of BP terms by significance')
 ```
@@ -539,7 +551,7 @@ vennDiagram(vennCounts(cbind(PValue   = allTerms %in% MF.pvalue.sigTerms,
 ggplot(data = data.frame(PValue   = rank(score(MF.weight01))[allTerms],
                          Variance = rank(score(MFvar.weight01))[allTerms]),
        mapping = aes(x = PValue, y = Variance)) +
-   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   geom_point() + geom_smooth(methdo='lm') + xlab('Using gene p-values') +
    ylab('Using portion of explained variance') +
    ggtitle('Ordering of MF terms by significance')
 ```
@@ -554,7 +566,7 @@ vennDiagram(vennCounts(cbind(PValue   = allTerms %in% CC.pvalue.sigTerms,
 ggplot(data = data.frame(PValue   = rank(score(CC.weight01))[allTerms],
                          Variance = rank(score(CCvar.weight01))[allTerms]),
        mapping = aes(x = PValue, y = Variance)) +
-   geom_point() + geom_smooth() + xlab('Using gene p-values') +
+   geom_point() + geom_smooth(method='lm') + xlab('Using gene p-values') +
    ylab('Using portion of explained variance') +
    ggtitle('Ordering of CC terms by significance')
 ```
