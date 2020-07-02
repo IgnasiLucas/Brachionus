@@ -2,6 +2,7 @@
 title: "Functional enrichment analysis"
 output: html_document
 author: "J. Ignacio Lucas Lledó"
+date: "30/06/2020"
 params:
    TAG: 'genes'
    VAR: 'regime'
@@ -14,6 +15,7 @@ library(knitr)   # to use kable()
 library(limma)   # to use vennDiagram()
 library(ggplot2)
 library(variancePartition)
+library(gridExtra)
 TAG <- params$TAG
 VAR <- params$VAR
 ANNOTATION <- list(genes = '../2019-07-26/genes/annotation.txt',
@@ -267,9 +269,9 @@ rm(ResultsSummary)
 
 ```{r BP1, message=FALSE}
 orderedTerms <- names(sort(score(BP.reg.weight01)))
-significant.weight01 <- score(BP.reg.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(BP.reg.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(BP.reg.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(BP.reg.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(BP.reg.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(BP.reg.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 BP.reg.sigTerms <- sigTerms
@@ -303,19 +305,18 @@ showSigOfNodes(GOdata.BP, score(BP.reg.weight01),
 
 This is just a example of the most significant GO term:
 
-```{r BP1density, message=FALSE}
-showGroupDensity(GOdata.BP, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOdata.BP, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOdata.BP, orderedTerms[3], rm.one=FALSE)
+```{r BP1density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOdata.BP, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 ## Molecular function
 
 ```{r MF1, message=FALSE}
 orderedTerms <- names(sort(score(MF.reg.weight01)))
-significant.weight01 <- score(MF.reg.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(MF.reg.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(MF.reg.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(MF.reg.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(MF.reg.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(MF.reg.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 MF.reg.sigTerms <- sigTerms
@@ -343,19 +344,18 @@ showSigOfNodes(GOdata.MF, score(MF.reg.weight01),
                wantedNodes = sigTerms)
 ```
 
-```{r MF1density, message=FALSE}
-showGroupDensity(GOdata.MF, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOdata.MF, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOdata.MF, orderedTerms[3], rm.one=FALSE)
+```{r MF1density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOdata.MF, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 ## Cellular component
 
 ```{r CC1, message=FALSE}
 orderedTerms <- names(sort(score(CC.reg.weight01)))
-significant.weight01 <- score(CC.reg.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(CC.reg.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(CC.reg.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(CC.reg.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(CC.reg.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(CC.reg.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 CC.reg.sigTerms <- sigTerms
@@ -382,10 +382,9 @@ showSigOfNodes(GOdata.CC, score(CC.reg.weight01),
                wantedNodes = sigTerms)
 ```
 
-```{r CC1density, message=FALSE}
-showGroupDensity(GOdata.CC, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOdata.CC, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOdata.CC, orderedTerms[3], rm.one=FALSE)
+```{r CC1density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOdata.CC, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 # Functional enrichment in the unpredictable environment
@@ -394,9 +393,9 @@ showGroupDensity(GOdata.CC, orderedTerms[3], rm.one=FALSE)
 
 ```{r BP2, message=FALSE}
 orderedTerms <- names(sort(score(BP.ran.weight01)))
-significant.weight01 <- score(BP.ran.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(BP.ran.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(BP.ran.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(BP.ran.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(BP.ran.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(BP.ran.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 BP.ran.sigTerms <- sigTerms
@@ -430,19 +429,18 @@ showSigOfNodes(GOminus.BP, score(BP.ran.weight01),
 
 This is just a example of the most significant GO term:
 
-```{r BP2density, message=FALSE}
-showGroupDensity(GOminus.BP, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOminus.BP, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOminus.BP, orderedTerms[3], rm.one=FALSE)
+```{r BP2density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOminus.BP, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 ## Molecular function
 
 ```{r MF2, message=FALSE}
 orderedTerms <- names(sort(score(MF.ran.weight01)))
-significant.weight01 <- score(MF.ran.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(MF.ran.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(MF.ran.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(MF.ran.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(MF.ran.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(MF.ran.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 MF.ran.sigTerms <- sigTerms
@@ -470,19 +468,18 @@ showSigOfNodes(GOminus.MF, score(MF.ran.weight01),
                wantedNodes = sigTerms)
 ```
 
-```{r MF2density, message=FALSE}
-showGroupDensity(GOminus.MF, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOminus.MF, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOminus.MF, orderedTerms[3], rm.one=FALSE)
+```{r MF2density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOminus.MF, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 ## Cellular component
 
 ```{r CC2, message=FALSE}
 orderedTerms <- names(sort(score(CC.ran.weight01)))
-significant.weight01 <- score(CC.ran.weight01)[orderedTerms] <= 0.005
-significant.lea      <- score(CC.ran.lea)[orderedTerms] <= 0.005
-significant.elim     <- score(CC.ran.elim)[orderedTerms] <= 0.005
+significant.weight01 <- score(CC.ran.weight01)[orderedTerms] <= 0.001
+significant.lea      <- score(CC.ran.lea)[orderedTerms] <= 0.001
+significant.elim     <- score(CC.ran.elim)[orderedTerms] <= 0.001
 sigTerms <- orderedTerms[significant.weight01 & significant.lea & significant.elim]
 # sigTerms gets updated, and is already used in the code, but I need a permanent copy for later.
 CC.ran.sigTerms <- sigTerms
@@ -509,10 +506,9 @@ showSigOfNodes(GOminus.CC, score(CC.ran.weight01),
                wantedNodes = sigTerms)
 ```
 
-```{r CC2density, message=FALSE}
-showGroupDensity(GOminus.CC, orderedTerms[1], rm.one=FALSE)
-showGroupDensity(GOminus.CC, orderedTerms[2], rm.one=FALSE)
-showGroupDensity(GOminus.CC, orderedTerms[3], rm.one=FALSE)
+```{r CC2density, message=FALSE, fig.width=12}
+grid.arrange(grobs = lapply(1:3, function(x) showGroupDensity(GOminus.CC, orderedTerms[x], rm.one=FALSE)),
+             nrow = 1)
 ```
 
 # Comparison between the two ordering of genes
