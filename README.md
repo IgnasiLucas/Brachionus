@@ -26,6 +26,11 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-07-01
+Started, but not finished, interpreting the results of the enrichment analysis when
+genes are ordered by *t* statistic (2020-06-30). I decided to go with the original
+results.
+
 # 2020-06-30
 When re-doing some figures I realized that in the enrichment analysis done in 2020-01-14
 I used an ordering of genes based on either p value of differential expression or amount
