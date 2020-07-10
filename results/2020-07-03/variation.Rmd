@@ -1,0 +1,178 @@
+---
+title: "Variation"
+author: "J. Ignacio Lucas Lledó"
+date: "3/7/2020"
+output: html_document
+bibliography: variation.bib
+---
+
+```{r setup, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DESeq2)
+library(ggplot2)
+library(vegan)
+library(PoiClaClu)
+
+COUNTS <- '../2019-03-29/genes.PostCount.txt'
+```
+
+The counts of reads overlapping a gene in a sample of dormant eggs is determined
+by the sequencing effort (library size) and the unobserved true proportion of
+that gene's transcripts in the set of dormant eggs. In turn, that unobserved
+proportion is the average of all individual cells in all eggs in the sample. The
+variance of the sample-wise unobserved proportion of a gene's transcripts can be
+thought of as the variance of the average of all cell-wise unobserved proportions.
+That is, the biological variation between two replicates is made up of the variation
+in their cells, of course. The sample-wise variance is the variance of an average,
+which is proportional to the variances and covariances of the cell-wise values.
+
+When performing RNA-seq experiments on anything other than single cells, positive
+correlations are implicitly assumed: two cells may be expected to have correlated
+expressions of a gene for being part of the same tissue, the same organism, or for
+being under similar conditions. The experiment would not make sense if samples were
+composed of cells with perfect negative correlations, in a way that gene expression
+changes in, say, half the cells were compensated by changes in the opposite direction
+in the other half of cells. In such an scenario, any two samples would look alike,
+despite wide variation at the cell level. Actually, even at the cell level they would
+look alike, unless cells could be enumerated or classified to be compared between samples.
+
+Thus, it is perfectly reasonable to expect that if an environment makes the expression
+of a gene more variable among cells (or eggs) it will also make the sample-wise
+proportion of that gene's transcript more variable among samples. 
+
+Packages like `edgeR` and `DESeq2` that test for differences of gene expression
+between conditions need to estimate the variance of read counts
+from few replicates. They share information among genes to compensate for the
+scarcity of replicates, assuming that genes with similar expression levels must
+have similar amounts of variation among replicates. In order to obtain estimates
+of variance for individual values of read counts, they use the observed relationship
+between dispersion and mean value. In [@Anders2010] it is quite clear that DESeq2 estimates
+variance of individual values separately for the different groups of samples.
+It is less clear that `edgeR` allows for a different variance in
+different conditions. That would explain why the mean-variance relationship changes
+so much when estimating variance separately for the two regimes when using
+`edgeR` (see `2020-01-28`). Here I will use DESeq2 to compare the the variance
+of gene expression between conditions. I found [This](https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html#sample-distances)
+interesting tutorial.
+
+```{r data, message=FALSE}
+counts <- as.matrix(read.table(COUNTS, row.names=1, header=TRUE))
+samples <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
+                                    "X3A_S9", "X3C_S11", "X4A_S6", "X4C_S12",
+                                    "X5A_S2", "X5C_S4", "X6A_S3", "X6C_S10"),
+                      regime = c("unpredictable", "unpredictable", "unpredictable",
+                                 "unpredictable", "predictable", "predictable",
+                                 "unpredictable", "unpredictable", "predictable",
+                                 "predictable", "predictable", "predictable"),
+                      population = c("1", "1", "2", "2", "3", "3",
+                                     "4", "4", "5", "5", "6", "6"),
+                      treatment = rep(c("hatch", "diapause"), 6))
+stopifnot(all.equal(rownames(samples), colnames(counts)))
+dds <- DESeqDataSetFromMatrix(countData = round(counts), colData = samples, design = ~ regime)
+keep <- rowSums(counts(dds)) > 1
+dds <- dds[keep,]
+nrow(dds)
+```
+
+# Estimating dispersions with DESeq2
+
+```{r dispersion, message=FALSE}
+dds <- estimateSizeFactors(dds)
+dds <- estimateDispersions(dds, fitType = 'parametric')
+```
+
+The `estimateDispersions()` function estimates dispersions by maximization of
+a Cox Reid-adjusted profile likelihood, which is a penalized likelihood that
+accounts for the usage of data to estimate both the dispersion and the coefficients
+of the GLM of the expression levels themselves. That is, the design formula is
+used in the estimation of gene-wise dispersions. But the estimated dispersions
+are not separate for separate conditions. The model assumes a gene's expression
+has the same coefficient of variation in all sample groups. This is described in
+[@McCarthy2012]. Thus, it does not help compare the dispersions among sample
+groups.
+
+```{r split, message=FALSE}
+is.random   <- samples$regime == 'unpredictable'
+is.regular  <- samples$regime == 'predictable'
+dds.random  <- DESeqDataSetFromMatrix(countData = round(counts[, is.random]),
+                                      colData = samples[is.random,], design = ~ 1)
+dds.regular <- DESeqDataSetFromMatrix(countData = round(counts[, is.regular]),
+                                      colData = samples[is.regular,], design = ~ 1)
+keep <- rowSums(counts(dds.random)) > 1 & rowSums(counts(dds.regular)) > 1
+dds.random  <- dds.random[keep,]
+dds.regular <- dds.regular[keep,]
+dds.random  <- estimateSizeFactors(dds.random)
+dds.regular <- estimateSizeFactors(dds.regular)
+dds.random  <- estimateDispersions(dds.random,  fitType = 'parametric')
+dds.regular <- estimateDispersions(dds.regular, fitType = 'parametric')
+
+MeanDisp <- rbind(data.frame(Regime = factor('unpredictable',
+                                             levels=c('predictable','unpredictable')),
+                             Dispersion = dispersions(dds.random),
+                             MeanCount  = mcols(dds.random)$baseMean),
+                  data.frame(Regime = factor('predictable',
+                                             levels=c('predictable','unpredictable')),
+                             Dispersion = dispersions(dds.regular),
+                             MeanCount = mcols(dds.regular)$baseMean))
+
+ggplot(data = MeanDisp, mapping = aes(x = MeanCount, y = Dispersion, color = Regime)) +
+   geom_smooth() + scale_x_log10() + xlab('Mean count') + ylab('Dispersion')
+ggsave('meandisp.png')
+```
+
+This is qualitatively similar to the comparison made in `2020-01-28` using
+`edgeR`: random environments make low-expressed genes be more variably
+expressed among samples (and presumably among eggs).
+
+# Homogeneity test
+
+I would like a more formal comparison of dispersion between regimes. Another
+approach is to reduce the dimensionality of the counts matrix and compare the
+samples using any distance function. And then test for homogeneity between
+regimes [@Anderson2006] using the `vegan` package [@Oksanen2019]. The distance
+measure I want to use is the Poisson distance implemented in the `PoiClaClu`
+package, by @Witten2011.
+
+```{r homogeneity, message=FALSE}
+poisd <- PoissonDistance(t(counts(dds)))
+anova(betadisper(poisd$dd, samples$regime))
+
+permutest(betadisper(poisd$dd, samples$regime))
+
+plot(betadisper(poisd$dd, samples$regime), main='Poisson distances',
+     sub='')
+png(filename = 'poisson.png')
+  plot(betadisper(poisd$dd, samples$regime), sub='', main='')
+dev.off()
+```
+
+Using the formal test, the difference in among-sample dispersion between
+regimes is not significant, even though the average distance to the
+centroid is lower in the regular than in the random environment. That was
+using the Poisson distance, which is appropriate for count data. Let's
+try with a transformation of the count data that stabilizes the variance.
+
+```{r transformations}
+rld <- rlog(dds, blind=TRUE)
+sampleDist <- dist(t(assay(rld)))
+permutest(betadisper(sampleDist, samples$regime))
+plot(betadisper(sampleDist, samples$regime), main='rlog transformed counts, Euclidean distances')
+```
+
+Hmmm, the samples from the *random* environment make up a Star Destroyer...
+
+# Conclusions
+
+The unpredictable environment makes the expression of lowly expressed genes
+more variable, but it does not affect the genes expressed at high levels
+in the same way. As a result, the dispersion in the overall composition of
+RNA species among samples is not significantly higher among samples from the
+unpredictable environment.
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```
+
+# References

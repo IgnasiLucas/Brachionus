@@ -26,6 +26,16 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-07-03
+To further test the hypothesis that the unpredictable regime makes gene exxpression
+noiser, or more unpredictable among eggs and therefore also among samples, I use
+here DESeq2 to estimate dispersions separately in the two regimes, like I did with
+edgeR in 2020-01-28 and with similar results. In addition, I use a distance-based
+homogeneity test of multivariate dispersion to determine if samples from one regime
+are closer among them than samples in the other regime, in the multidimensional space
+of gene expression profile. I use Poisson distances from the PoiClaClu package by
+Daniela Witten. The difference is not significant.
+
 # 2020-07-01
 Started, but not finished, interpreting the results of the enrichment analysis when
 genes are ordered by *t* statistic (2020-06-30). I decided to go with the original
