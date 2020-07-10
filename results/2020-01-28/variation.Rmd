@@ -42,9 +42,12 @@ named `vobjDream`.
 
 ```{r variance, message=FALSE}
 load(EXPRESSION)
-colnames(vobjDream$E)       <- paste('expression', row.names(vobjDream$targets), sep='_')
-colnames(vobjDream$weights) <- paste('variance', row.names(vobjDream$targets), sep='_')
+#colnames(vobjDream$E)       <- paste('expression', row.names(vobjDream$targets), sep='_')
+#colnames(vobjDream$weights) <- paste('variance', row.names(vobjDream$targets), sep='_')
+
 meanVar <- as.data.frame(cbind(vobjDream$E, 1/vobjDream$weights))
+colnames(meanVar) <- c(paste('expression', row.names(vobjDream$targets), sep='_'),
+                       paste('variance', row.names(vobjDream$targets), sep='_'))
 meanVar$gene <- row.names(meanVar)    # column 25
 meanVar <- pivot_longer(meanVar, cols=1:24, names_to=c('what','population','hatching'),
                         names_pattern='(expression|variance)_(X[1-6])([AC])', values_to='value')
@@ -74,7 +77,7 @@ from the unpredictable environment). But I want to make sure I'm using the same 
 in both split analyses and in the original one. That way, I will be able to use the newly estimated
 weights with the original model in the whole data set.
 
-```{r separate, message=FALSE}
+```{r separate, message=FALSE, warning=FALSE}
 counts <- as.matrix(read.table(COUNTS, row.names=1, header=TRUE))
 threshold <- 5 / (min(colSums(counts)) / 1000000)
 keep <- rowSums(cpm(counts) > threshold) >= 4
@@ -82,7 +85,7 @@ keep <- rowSums(cpm(counts) > threshold) >= 4
 ## (17225 genes). Results are very similar.
 #keep <- rowSums(cpm(counts[,c(1,2,3,4,7,8)]) > threshold) >= 2 & rowSums(cpm(counts[,c(5,6,9,10,11,12)]) > threshold) >= 2
 
-# samples:                 1A 1C 2A 2C 3A 3C 4A 4C 5A 5C 6A 6C
+# samples:                     1A 1C 2A 2C 3A 3C 4A 4C 5A 5C 6A 6C
 countsRandom  <- counts[keep,c( 1, 2, 3, 4,       7, 8            )]
 countsRegular <- counts[keep,c(             5, 6,       9,10,11,12)]
 geneExprRandom  <- DGEList(countsRandom)
@@ -140,7 +143,7 @@ the differential expression analysis? Lets start with the last one.
 
 # Variance partition with weights estimated separately for regular and unpredictable environments
 
-```{r variancePartition, message=FALSE}
+```{r variancePartition, message=FALSE, warning=FALSE}
 # The expression matrix I use is the original one, in vobjDream$E, where all samples underwent
 # a common normalization.
 metadata <- data.frame(row.names = c("X1A_S8", "X1C_S1", "X2A_S7", "X2C_S5",
@@ -161,10 +164,23 @@ varPartSep <- fitExtractVarPartModel(vobjDream$E[row.names(E),], form, metadata,
 plotVarPart(varPartSep)
 ```
 
-```{r differentialExpression, message=FALSE}
+```{r differentialExpression, message=FALSE, warning=FALSE}
 fitmmSep <- dream(vobjDream$E[row.names(E),], form, metadata, weightsMatrix=W)
-
+t1 <- topTable(fitmm,    coef='regime', number=length(fitmm$F),    sort.by='none')[,'t']
+t2 <- topTable(fitmmSep, coef='regime', number=length(fitmmSep$F), sort.by='none')[,'t']
+ggplot(data = data.frame(t1=t1, t2=t2), aes(x=t1, y=t2)) + geom_point() +
+  geom_smooth(method='lm') + ggtitle('Comparison of t statistics') +
+  xlab('Joint inference of variance') + ylab('Separate inference of variance')
 ```
 
+It is conforting to see that inferring variance separately for the two
+regimes does not change much the results of the differential expression
+analysis. 
 
+# Session Information
+
+```{r sessionInfo}
+save(fitmmSep, file = 'fitmmSep.RData')
+sessionInfo()
+```
 # References
