@@ -1,0 +1,12 @@
+8c7327e6700cab111c2134efaa4284ef  1A_S8.trim.fastq.gz
+0273dc1ccf40a90f2a76935c1c1fab9d  1C_S1.trim.fastq.gz
+bcc98cc23b4538aef7675c77eaef53c5  2A_S7.trim.fastq.gz
+0973e16ca8585423f56a916a4365a4a5  2C_S5.trim.fastq.gz
+a260954f364453b1d8c718de2a527f75  3A_S9.trim.fastq.gz
+8d3bd701d6052c74c7b8f73ffb5af471  3C_S11.trim.fastq.gz
+8935ae8423b597df99c264ceb773b8be  4A_S6.trim.fastq.gz
+39debbb09a7ba316d6c355ca47e4baaa  4C_S12.trim.fastq.gz
+b1a7991927536eedba94f44a8c95d8b9  5A_S2.trim.fastq.gz
+f78d4dba789a5f00f839c2272a67c719  5C_S4.trim.fastq.gz
+968b64e657f19744d8c68c855966617c  6A_S3.trim.fastq.gz
+012d3f72a64726de3fe6ba34b1d13010  6C_S10.trim.fastq.gz
