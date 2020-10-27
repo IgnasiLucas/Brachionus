@@ -26,6 +26,11 @@ Some folders have their own conda environment.
 
 ---------------------------------------------------------------------------------------------------
 
+# 2020-10-27
+Detailed analysis of a couple functions believed to be significantly overexpressed
+in the random regime: the fatty acids synthase complex and protein I of the vitelline-
+membrane outer layer (VMO-I).
+
 # 2020-07-03
 To further test the hypothesis that the unpredictable regime makes gene exxpression
 noiser, or more unpredictable among eggs and therefore also among samples, I use

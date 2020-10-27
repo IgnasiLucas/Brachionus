@@ -1,0 +1,60 @@
+---
+title: "Detailed analysis of some candidate genes"
+author: "J. Ignacio Lucas Lledó"
+date: "27/10/2020"
+output: html_document
+---
+
+```{r setup, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(edgeR)
+library(variancePartition)
+library(topGO)
+library(ggplot2)
+load('../2020-01-08/genes.RData')
+load('../2020-01-14/Enrichment.genes.regime.RData')
+```
+
+```{r message=FALSE, warning=FALSE}
+GO.list <- as.list(GOTERM)
+vitelline.GO <- grep("vitelline", sapply(GO.list, function(x) Term(x)), value=TRUE)
+fattyacid.GO <- grep("fatty acid synthase", sapply(GO.list, function(x) Term(x)), value=TRUE)
+
+vitelline.genes <- unique(unlist(
+  sapply(list(GOdata.BP, GOdata.CC, GOdata.MF), function(x) {
+    genesInTerm(x, names(vitelline.GO))
+  })
+))
+
+fattyacid.genes <- unique(unlist(
+  sapply(list(GOdata.BP, GOdata.CC, GOdata.MF), function(x) {
+    genesInTerm(x, names(fattyacid.GO))
+  })
+))
+```
+
+There are `r length(fattyacid.genes)` genes in the data set with annotations related to the
+fatty acid synthase, and `r length(vitelline.genes)` genes associated with vitelline.
+
+```{r }
+NumOfGenes <- dim(vobjDream)[1]
+topTable(fitmm, coef='regime', number=NumOfGenes, sort.by='p')[fattyacid.genes,]
+MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea, orderBy='weight01', ranksOf='elim', topNodes=length(usedGO(GOdata.MF)))
+MF.all[MF.all$GO.ID %in% names(fattyacid.GO),]
+
+```
+
+# Conclusions
+In our data set there is no gene with any annotation related to the vitelline outer membrane.
+It is possible that such genes did not pass the abundance threshold applied before differential
+expression.
+
+There are 5 genes associated with the "fatty acid synthase activity" (molcular function), and
+one of them is significantly differentially expressed (raw $p$ value 0.00513479). It's fold change
+is positive (0.36), indicating higher expression levels in the random environment. 
+
+
+# Session Information
+```{r}
+sessionInfo()
+```
