@@ -1,0 +1,7 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0030286	dynein complex	26	0	0.18	1	0.00024	0.0022	0.00024
+GO:0032991	protein-containing complex	886	4	6.23	31	0.04084	0.0037	0.03349
+GO:0005815	microtubule organizing center	37	1	0.26	11	0.01340	0.0046	0.01340
+GO:0005885	Arp2/3 protein complex	8	0	0.06	5	0.00799	0.0080	0.00799
+GO:0005680	anaphase-promoting complex	7	0	0.05	7	0.01124	0.0112	0.01124
+GO:0044428	nuclear part	236	0	1.66	39	0.05022	0.0122	0.07962

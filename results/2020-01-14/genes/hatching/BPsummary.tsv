@@ -1,0 +1,24 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0060271	cilium assembly	46	0	0.34	1	8e-07	6.9e-06	8e-07
+GO:0046907	intracellular transport	202	0	1.51	439	0.3577	0.0014	0.35774
+GO:0006486	protein glycosylation	75	1	0.56	4	0.0018	0.0015	0.00177
+GO:1901264	carbohydrate derivative transport	11	0	0.08	212	0.1233	0.0029	0.12333
+GO:0015931	nucleobase-containing compound transport	29	0	0.22	498	0.4205	0.0029	0.42046
+GO:0034314	Arp2/3 complex-mediated actin nucleation	12	0	0.09	8	0.0031	0.0031	0.00315
+GO:0007264	small GTPase mediated signal transductio...	81	0	0.6	10	0.0039	0.0032	0.00393
+GO:0072330	monocarboxylic acid biosynthetic process	24	1	0.18	595	0.5189	0.0044	0.51887
+GO:0043604	amide biosynthetic process	215	1	1.6	696	0.6011	0.0044	0.47885
+GO:0006418	tRNA aminoacylation for protein translat...	40	0	0.3	13	0.0044	0.0044	0.00445
+GO:0009968	negative regulation of signal transducti...	9	0	0.07	9	0.0036	0.0064	0.00365
+GO:0016579	protein deubiquitination	40	0	0.3	17	0.0064	0.0064	0.00642
+GO:0003341	cilium movement	10	0	0.07	30	0.0110	0.0110	0.01100
+GO:0001522	pseudouridine synthesis	13	0	0.1	34	0.0120	0.0120	0.01201
+GO:0035435	phosphate ion transmembrane transport	8	1	0.06	35	0.0123	0.0123	0.01230
+GO:0044341	sodium-dependent phosphate transport	8	1	0.06	36	0.0123	0.0123	0.01230
+GO:0006511	ubiquitin-dependent protein catabolic pr...	102	1	0.76	714	0.6260	0.0135	0.62602
+GO:0006012	galactose metabolic process	6	0	0.04	39	0.0143	0.0143	0.01430
+GO:0098813	nuclear chromosome segregation	27	1	0.2	436	0.3523	0.0175	0.35227
+GO:0035556	intracellular signal transduction	173	0	1.29	23	0.0096	0.0182	0.00022
+GO:1901135	carbohydrate derivative metabolic proces...	300	2	2.24	370	0.2625	0.0190	0.45764
+GO:0019637	organophosphate metabolic process	204	0	1.52	511	0.4352	0.0191	0.68997
+GO:0006030	chitin metabolic process	74	0	0.55	224	0.1318	0.0191	0.13182

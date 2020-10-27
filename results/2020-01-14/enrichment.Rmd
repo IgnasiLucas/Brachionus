@@ -93,7 +93,7 @@ which have less than `n` annotated genes.
 I generate three datasets, to analyse each of the three ontologies.
 
 ```{r GOdata1, results = 'hold', message = FALSE}
-selection <- function(allScores) {return(allScores < 0.05)}
+selection <- function(allScores) {return(allScores < 0.01)}
 GOdata.BP <- new('topGOdata',
    description = 'Differential expression among Brachionus plicatilis populations.',
    ontology = 'BP', 
@@ -162,11 +162,23 @@ rm(ResultsSummary)
 
 ## Results
 
-The `topGO` package does not pay much attention to what terms are significant because they are
-*over*represented and which ones are *under*represented among the most differentially expressed
-genes. I think it's worth separating them, to facilitate the biological interpretation. Note 
-that not all terms listed in the tables below are significant. The scores for the three methods
-(elim, weight01 and lea) are non-corrected p-values.
+The `topGO` package only looks for GO terms that are *over*represented among the top of the
+gene list (genes with lowest score, assumed to be a $p$ value; see `2020-06-30`). Thus,
+*under*represented GO terms are ignored, even though it could be interesting to know if
+among differentially expressed genes there are *fewer* genes annotated with certain terms
+than expected by chance. The way to identify those terms would be to reverse the scores.
+In this case, running the analysis with $1 - p$ values would be to search for terms that
+are overrepresented among non-differentially expressed genes. Not worth pursuing now.
+
+Note that, despite my initial confusion (see previous commits), it is *not* true that
+significant terms with fewer significant genes than expected are significantly underrepresented
+terms. It is just possible that a term is significant because of the overall distribution
+of scores of genes annotated with that term, even if none of those genes (or just fewer than
+expected) are significant. This is because of the use of Kolmogorov-Smirnov test, instead of
+the Fisher's exact test. Note that even though no hard threshold is necessary in the K-S test,
+`GenTable()` produces a summary table with number of annotated and *significant* genes for every
+significant GO term. That number of significant term is determined by the `selection()` function
+passed to the `topGO` object, only for display purposes unless using Fisher's exact test.
 
 ### Biological process
 
@@ -181,14 +193,11 @@ BP.pvalue.sigTerms <- sigTerms
 
 BP.all <- GenTable(GOdata.BP, elim=BP.elim, weight01=BP.weight01, lea=BP.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+write.table(BP.all, file=paste(TAG, VAR, 'BPsummary.tsv', sep='/'),
+            quote=FALSE, sep='\t', row.names=FALSE)
 
-kable(
-   BP.all[BP.all$Significant > BP.all$Expected,],
+kable(BP.all,
    caption = "Most over-represented terms of the Biological Process ontology.")
-
-kable(
-   BP.all[BP.all$Significant < BP.all$Expected,],
-   caption = "Most under-represented terms of the Biological Process ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -232,14 +241,11 @@ MF.pvalue.sigTerms <- sigTerms
 
 MF.all <- GenTable(GOdata.MF, elim=MF.elim, weight01=MF.weight01, lea=MF.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
+write.table(MF.all, file=paste(TAG, VAR, 'MFsummary.tsv', sep='/'),
+            quote=FALSE, sep='\t', row.names=FALSE)
 
-kable(
-   MF.all[MF.all$Significant > MF.all$Expected,],
+kable(MF.all,
    caption = "Most over-represented terms of the Molecular Function ontology.")
-
-kable(
-   MF.all[MF.all$Significant < MF.all$Expected,],
-   caption = "Most under-represented terms of the Molecular Function ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -277,13 +283,12 @@ CC.pvalue.sigTerms <- sigTerms
 
 CC.all <- GenTable(GOdata.CC, elim=CC.elim, weight01=CC.weight01, lea=CC.lea,
                    orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
-kable(
-   CC.all[CC.all$Significant > CC.all$Expected,],
-   caption = "Most over-represented terms of the Cellular Component ontology.")
 
-kable(
-   CC.all[CC.all$Significant < CC.all$Expected,],
-   caption = "Most under-represented terms of the Cellular Component ontology.")
+write.table(CC.all, file=paste(TAG, VAR, 'CCsummary.tsv', sep='/'),
+            quote=FALSE, sep='\t', row.names=FALSE)
+
+kable(CC.all,
+   caption = "Most over-represented terms of the Cellular Component ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -314,7 +319,7 @@ showGroupDensity(GOdata.CC, orderedTerms[3], rm.one=FALSE)
 I need to generate the topGO objects again, using the alternative gene ordering, based
 on the proportion of expression-level variance explained by `r VAR`. I miss a way to
 inform the `topGOdata` object that the score in this case is reversed, with respect to
-p-values: the higher it is, the more differentially expressed the gene is. To make sure
+$p$-values: the higher it is, the more differentially expressed the gene is. To make sure
 that GO terms are tested in the same way than when using p-values, I will just reverse
 the proportion of variance explained by `r VAR` to its complement. Taking this into
 account, the subset of *interesting* genes (`selection()` function) must be defined as
@@ -395,13 +400,8 @@ BP.variance.sigTerms <- sigTerms
 BPvar.all <- GenTable(GOdataVar.BP, elim=BPvar.elim, weight01=BPvar.weight01, lea=BPvar.lea,
                       orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
 
-kable(
-   BPvar.all[BPvar.all$Significant > BPvar.all$Expected,],
+kable(BPvar.all,
    caption = "Most over-represented terms of the Biological Process ontology.")
-
-kable(
-   BPvar.all[BPvar.all$Significant < BPvar.all$Expected,],
-   caption = "Most under-represented terms of the Biological Process ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -442,13 +442,8 @@ MF.variance.sigTerms <- sigTerms
 
 MFvar.all <- GenTable(GOdataVar.MF, elim=MFvar.elim, weight01=MFvar.weight01, lea=MFvar.lea,
                       orderBy="weight01", ranksOf="elim", topNodes=sum(significant.elim))
-kable(
-   MFvar.all[MFvar.all$Significant > MFvar.all$Expected,],
+kable(MFvar.all,
    caption = "Most over-represented terms of the Molecular Function ontology.")
-
-kable(
-   MFvar.all[MFvar.all$Significant < MFvar.all$Expected,],
-   caption = "Most under-represented terms of the Molecular Function ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,
@@ -492,13 +487,8 @@ CC.variance.sigTerms <- sigTerms
 CCvar.all <- GenTable(GOdataVar.CC, elim=CCvar.elim, weight01=CCvar.weight01, lea=CCvar.lea,
                       orderBy="weight01", ranksOf="elim", topNodes=max(sum(significant.elim), 10))
 
-kable(
-   CCvar.all[CCvar.all$Significant > CCvar.all$Expected,],
+kable(CCvar.all,
    caption = "Most over-represented terms of the Cellular Component ontology.")
-
-kable(
-   CCvar.all[CCvar.all$Significant < CCvar.all$Expected,],
-   caption = "Most under-represented terms of the Cellular Component ontology.")
 
 vennDiagram(vennCounts(cbind(weight01=significant.weight01,
                              lea=significant.lea,

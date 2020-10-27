@@ -1,0 +1,21 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0005509	calcium ion binding	638	61	48.86	1	3.0e-16	3.0e-16	3.0e-16
+GO:0043565	sequence-specific DNA binding	221	11	16.93	3	0.00035	5.7e-05	0.00035
+GO:0004930	G protein-coupled receptor activity	251	16	19.22	2	9.9e-06	5.8e-05	1.3e-06
+GO:0008417	fucosyltransferase activity	42	1	3.22	4	0.00041	0.00041	0.00041
+GO:0003774	motor activity	277	12	21.21	156	0.13853	0.00044	0.13853
+GO:0030248	cellulose binding	8	5	0.61	5	0.00054	0.00054	0.00054
+GO:0004555	alpha,alpha-trehalase activity	15	4	1.15	6	0.00113	0.00113	0.00113
+GO:0008134	transcription factor binding	33	3	2.53	20	0.00828	0.00118	0.00828
+GO:0005200	structural constituent of cytoskeleton	23	3	1.76	7	0.00121	0.00121	0.00121
+GO:0004181	metallocarboxypeptidase activity	39	5	2.99	8	0.00178	0.00178	0.00178
+GO:0016462	pyrophosphatase activity	952	68	72.91	210	0.23026	0.00297	0.68247
+GO:0004198	calcium-dependent cysteine-type endopept...	62	7	4.75	10	0.00301	0.00301	0.00301
+GO:0004252	serine-type endopeptidase activity	143	24	10.95	11	0.00329	0.00329	0.00329
+GO:0008061	chitin binding	112	16	8.58	14	0.00393	0.00393	0.00393
+GO:0004601	peroxidase activity	59	12	4.52	93	0.06946	0.00397	0.06946
+GO:0004611	phosphoenolpyruvate carboxykinase activi...	7	1	0.54	15	0.00440	0.00440	0.00440
+GO:0004983	neuropeptide Y receptor activity	11	0	0.84	18	0.00670	0.00670	0.00670
+GO:0005267	potassium channel activity	80	10	6.13	12	0.00353	0.00684	0.00353
+GO:0008047	enzyme activator activity	135	10	10.34	109	0.08050	0.00834	0.08050
+GO:0030246	carbohydrate binding	83	17	6.36	28	0.01315	0.01064	0.04417

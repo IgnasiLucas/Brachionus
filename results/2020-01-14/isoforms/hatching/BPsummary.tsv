@@ -1,0 +1,25 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0001522	pseudouridine synthesis	31	2	0.3	2	0.0014	0.0014	0.00143
+GO:0046854	phosphatidylinositol phosphorylation	45	0	0.44	4	0.0027	0.0027	0.00272
+GO:0006400	tRNA modification	58	1	0.57	45	0.0163	0.0029	0.01633
+GO:0050684	regulation of mRNA processing	15	1	0.15	12	0.0059	0.0038	0.00592
+GO:0030513	positive regulation of BMP signaling pat...	9	0	0.09	8	0.0052	0.0052	0.00525
+GO:0060271	cilium assembly	73	1	0.72	7	0.0049	0.0068	0.00038
+GO:0016579	protein deubiquitination	90	2	0.88	14	0.0070	0.0070	0.00696
+GO:0048015	phosphatidylinositol-mediated signaling	40	0	0.39	20	0.0081	0.0081	0.00806
+GO:0070286	axonemal dynein complex assembly	9	0	0.09	21	0.0082	0.0082	0.00823
+GO:0055072	iron ion homeostasis	21	0	0.21	622	0.4004	0.0094	0.40036
+GO:0007411	axon guidance	11	0	0.11	27	0.0118	0.0118	0.01182
+GO:0006418	tRNA aminoacylation for protein translat...	87	1	0.85	78	0.0333	0.0124	0.03332
+GO:0015937	coenzyme A biosynthetic process	8	0	0.08	41	0.0147	0.0147	0.01467
+GO:0007275	multicellular organism development	85	0	0.83	108	0.0469	0.0155	0.00208
+GO:0046434	organophosphate catabolic process	52	0	0.51	893	0.5923	0.0158	0.59232
+GO:0060828	regulation of canonical Wnt signaling pa...	5	1	0.05	46	0.0168	0.0168	0.01683
+GO:0050953	sensory perception of light stimulus	11	0	0.11	846	0.5527	0.0172	0.55272
+GO:0006511	ubiquitin-dependent protein catabolic pr...	204	2	2	325	0.2086	0.0178	0.20864
+GO:0032543	mitochondrial translation	5	0	0.05	52	0.0186	0.0186	0.01859
+GO:0048017	inositol lipid-mediated signaling	50	0	0.49	53	0.0188	0.0188	0.00241
+GO:0006488	dolichol-linked oligosaccharide biosynth...	11	0	0.11	54	0.0189	0.0189	0.01886
+GO:0006654	phosphatidic acid biosynthetic process	10	0	0.1	55	0.0189	0.0189	0.01887
+GO:0007040	lysosome organization	8	0	0.08	58	0.0193	0.0193	0.01933
+GO:0006030	chitin metabolic process	103	0	1.01	142	0.0681	0.0222	0.06805

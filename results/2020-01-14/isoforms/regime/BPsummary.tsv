@@ -1,0 +1,20 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0007186	G protein-coupled receptor signaling pat...	302	17	23.25	1	4.2e-06	2.7e-06	4.2e-06
+GO:0006508	proteolysis	822	89	63.29	2	1.5e-05	3.1e-06	5.8e-06
+GO:0060271	cilium assembly	73	3	5.62	5	0.00022	1.3e-05	5.5e-07
+GO:0006355	regulation of transcription, DNA-templat...	621	44	47.81	3	3.2e-05	4.9e-05	3.2e-05
+GO:0060294	cilium movement involved in cell motilit...	7	1	0.54	4	0.00020	0.00020	0.00020
+GO:0007154	cell communication	1169	69	90.01	830	0.70082	0.00021	0.73799
+GO:0000079	regulation of cyclin-dependent protein s...	9	4	0.69	6	0.00030	0.00030	0.00030
+GO:0006813	potassium ion transport	103	12	7.93	7	0.00044	0.00047	0.00044
+GO:0005991	trehalose metabolic process	22	8	1.69	9	0.00107	0.00107	1.3e-05
+GO:0044271	cellular nitrogen compound biosynthetic ...	1365	99	105.1	1483	0.99078	0.00252	0.98536
+GO:0035082	axoneme assembly	18	1	1.39	8	0.00047	0.00273	0.00047
+GO:0006520	cellular amino acid metabolic process	208	18	16.02	480	0.41000	0.00309	0.59686
+GO:0005992	trehalose biosynthetic process	7	4	0.54	11	0.00315	0.00315	0.00315
+GO:0006030	chitin metabolic process	103	18	7.93	14	0.00656	0.00601	0.00656
+GO:0005975	carbohydrate metabolic process	360	45	27.72	123	0.07878	0.00763	0.06199
+GO:0006979	response to oxidative stress	40	12	3.08	15	0.00790	0.00790	0.00790
+GO:0006367	transcription initiation from RNA polyme...	20	7	1.54	17	0.00828	0.00828	0.00828
+GO:0031146	SCF-dependent proteasomal ubiquitin-depe...	5	0	0.38	18	0.00893	0.00893	0.00893
+GO:0042246	tissue regeneration	6	2	0.46	20	0.01006	0.01006	0.01006

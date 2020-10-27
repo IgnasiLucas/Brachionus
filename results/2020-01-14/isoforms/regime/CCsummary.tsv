@@ -1,0 +1,14 @@
+GO.ID	Term	Annotated	Significant	Expected	Rank in elim	elim	weight01	lea
+GO:0005576	extracellular region	197	38	15.03	1	1.7e-06	3.3e-05	1.7e-06
+GO:0005743	mitochondrial inner membrane	44	12	3.36	2	4.8e-05	0.00032	4.8e-05
+GO:0016459	myosin complex	57	3	4.35	3	0.00036	0.00036	0.00036
+GO:0005929	cilium	52	3	3.97	6	0.00071	0.00082	0.00071
+GO:0016021	integral component of membrane	1739	155	132.66	4	0.00046	0.00236	8.1e-05
+GO:0005886	plasma membrane	324	34	24.72	7	0.00082	0.00445	0.00097
+GO:0090575	RNA polymerase II transcription factor c...	47	11	3.59	31	0.02538	0.00503	0.02538
+GO:0098800	inner mitochondrial membrane protein com...	27	7	2.06	26	0.02146	0.00526	0.02146
+GO:0042555	MCM complex	12	5	0.92	11	0.00624	0.00624	0.00624
+GO:0099512	supramolecular fiber	52	6	3.97	9	0.00344	0.00766	0.00344
+GO:0031225	anchored component of membrane	8	4	0.61	13	0.00813	0.00813	0.00813
+GO:0008076	voltage-gated potassium channel complex	30	5	2.29	14	0.01150	0.01150	0.01150
+GO:0016020	membrane	3059	260	233.36	30	0.02483	0.01168	2.1e-07
