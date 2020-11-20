@@ -23,27 +23,29 @@ GO.results <- '../2020-01-14/Enrichment.genes.regime.RData'
 ```
 
 
-# Variance explained (Figure 4)
+# Variance explained (Figure 2)
 
 The `plotVarPart()` function does not let you customize the plot. I need to use `ggplot()`
 to change the order of factors. I also change their names to match.
 
-```{r Fig4}
+```{r Fig2}
 load(varPart.results)
-fig4data <- as.data.frame(varPart)
-fig4data <- pivot_longer(fig4data, 1:5, names_to = 'modelTerm', values_to = 'varExplained')
-fig4data$modelTerm <- factor(fig4data$modelTerm,
+fig2data <- as.data.frame(varPart)
+fig2data <- pivot_longer(fig2data, 1:5, names_to = 'modelTerm', values_to = 'varExplained')
+fig2data$modelTerm <- factor(fig2data$modelTerm,
                              levels = c('regime','treatment','regime:treatment','population','Residuals'),
                              labels = c('Selective regime', 'Diapause condition', 'Sel. regime x D. condition',
                                         'Population(Regime)', 'Residuals'))
-fig4data$varExplained <- 100 * fig4data$varExplained
-ggplot(data = fig4data, mapping = aes(x = modelTerm, y = varExplained)) + theme_bw() +
+fig2data$varExplained <- 100 * fig2data$varExplained
+ggplot(data = fig2data, mapping = aes(x = modelTerm, y = varExplained)) + theme_bw() +
   xlab('') + ylab('Variance explained (%)') +
-  theme(axis.text.x = element_text(angle = 20, color = 'black', hjust = 1), aspect.ratio = 0.7) +
+  theme(axis.text.x = element_text(angle = 20, color = 'black', hjust = 1, size=12),
+        axis.text.y = element_text(size=12),
+        axis.title = element_text(size=12), aspect.ratio = 0.7) +
   geom_violin(scale = 'width', aes(fill = modelTerm), show.legend = FALSE) + 
   geom_boxplot(fill = 'gray', width=0.1) + scale_fill_manual(values = c(ggColorHue(4), 'grey85'))
-ggsave('Fig4.png')
-rm(fig4data)
+ggsave('Fig2.jpeg', dpi=600)
+rm(fig2data)
 ```
 
 # Volcano plots (Figures 5 and 6)
@@ -84,10 +86,11 @@ volcanoPlot <- function(fit=fitmm, Coef='regime', num=length(fitmm$F),
   DE <- DE[order(DE$annotation, decreasing=TRUE),]
   ggplot(data=DE, mapping=aes(x=logFC, y=-log10(P.Value), color=annotation)) +
     geom_point(show.legend = FALSE) +
-    ggtitle(str_wrap(ifelse(nchar(Term(GOTERM[term])) <= 70,
-                            paste0(term, ", ", Term(GOTERM[term])),
-                            paste0(term, ", ", substr(Term(GOTERM[term]), 1, 60), '...')),
-                     width=40)) +
+    theme(axis.text = element_text(size=14), title = element_text(size=14)) +
+    ggtitle(str_wrap(ifelse(nchar(Term(GOTERM[term])) <= 50,
+                            paste0(term, ', ', Term(GOTERM[term])),
+                            paste0(term, ', ', substr(Term(GOTERM[term]), 1, 40), '...')),
+                     width=30)) +
     #xlab(expression(log[2]('Fold Change'))) +
     #ylab(expression(-log[10]('p-value'))) +
     xlab('') + ylab('') +
@@ -95,7 +98,7 @@ volcanoPlot <- function(fit=fitmm, Coef='regime', num=length(fitmm$F),
 }
 ```
 
-```{r Fig5, fig.width=12, fig.height=8}
+```{r Fig3, fig.width=12, fig.height=8}
 diapause_maintenance <- c('GO:0006289', 'GO:0006979', 'GO:0016715',
                           'GO:0005992', 'GO:0007186', 'GO:0007165')
 p <- grid.arrange(grobs = lapply(diapause_maintenance, function(x) volcanoPlot(term=x)),
@@ -104,10 +107,10 @@ p <- grid.arrange(grobs = lapply(diapause_maintenance, function(x) volcanoPlot(t
              top = grid.text('Functions associated with diapause maintenance', gp = gpar(fontsize = 18)),
              nrow = 2)
 p
-ggsave('Fig5.png', plot=p)
+ggsave('Fig3.jpeg', plot=p, dpi=600, width=12, height=8)
 ```
 
-```{r Fig6, fig.width=12, fig.height=12}
+```{r Fig4, fig.width=12, fig.height=12}
 embryo_development   <- c('GO:0007160', 'GO:0006813', 'GO:0046942',
                           'GO:0048870', 'GO:0003341', 'GO:0060271',
                           'GO:0004181', 'GO:0004252', 'GO:0004222')
@@ -117,8 +120,7 @@ p <- grid.arrange(grobs = lapply(embryo_development, function(x) volcanoPlot(ter
              top = grid.text('Functions associated with embryo development', gp = gpar(fontsize = 18)),
              nrow = 3)
 p
-ggsave('Fig6.png', plot=p)
-
+ggsave('Fig4.jpeg', plot=p, dpi=600, width=12, height=12)
 ```
 
 # Comparison of resuts of gene-set enrichment analyses (Supplementary figure 2)
